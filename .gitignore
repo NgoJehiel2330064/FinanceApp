@@ -1,0 +1,116 @@
+# ============================================================================
+# .NET / Visual Studio / Rider
+# ============================================================================
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+
+# ============================================================================
+# SECRETS ET CLÉS API - NE JAMAIS COMMITTER !
+# ============================================================================
+
+# User Secrets (développement local)
+**/secrets.json
+**/appsettings.*.json
+!**/appsettings.json
+!**/appsettings.Development.json
+
+# Clés API et mots de passe
+*.key
+*.pfx
+*.p12
+appsettings.Production.json
+appsettings.Staging.json
+
+# Variables d'environnement
+.env
+.env.local
+.env.*.local
+
+# ============================================================================
+# NuGet
+# ============================================================================
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ============================================================================
+# Entity Framework / Database
+# ============================================================================
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+
+# ============================================================================
+# Docker
+# ============================================================================
+docker-compose.override.yml
+.docker/
+
+# ============================================================================
+# Node (si frontend)
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================================================
+# OS
+# ============================================================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ============================================================================
+# Tests
+# ============================================================================
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# ============================================================================
+# ReSharper
+# ============================================================================
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user

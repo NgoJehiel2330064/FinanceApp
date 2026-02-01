@@ -1,0 +1,41 @@
+### Test de l'API Gemini
+
+# Variables
+@baseUrl = https://localhost:7219
+@apiKey = AIzaSyCpYUPvjgvhPNtCjlJDg0ddmwCXPvUZRCg
+
+### 1. Test du conseil financier
+GET {{baseUrl}}/api/finance/advice
+Accept: application/json
+
+### 2. Test de la liste des transactions
+GET {{baseUrl}}/api/transactions
+Accept: application/json
+
+### 3. Test direct de l'API Gemini (Google)
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{apiKey}}
+Content-Type: application/json
+
+{
+  "contents": [{
+    "parts": [{
+      "text": "Donne un conseil financier court en 15 mots maximum."
+    }]
+  }],
+  "generationConfig": {
+    "temperature": 0.3,
+    "maxOutputTokens": 30
+  }
+}
+
+### 4. Ajouter une transaction de test
+POST {{baseUrl}}/api/transactions
+Content-Type: application/json
+
+{
+  "amount": 1500,
+  "description": "Salaire mensuel",
+  "category": "Salaire",
+  "type": 1,
+  "date": "2026-02-01T00:00:00Z"
+}

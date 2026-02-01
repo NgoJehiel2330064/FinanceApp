@@ -1,0 +1,292 @@
+### ========================================
+### TEST API - GESTION DU PATRIMOINE (ASSETS)
+### ========================================
+### Base URL: http://localhost:5152
+
+### 1. LISTER TOUS LES ACTIFS
+### GET /api/assets
+GET http://localhost:5152/api/assets
+Accept: application/json
+
+###
+
+### 2. OBTENIR LA VALEUR TOTALE DU PATRIMOINE
+### GET /api/assets/total-value
+GET http://localhost:5152/api/assets/total-value
+Accept: application/json
+
+###
+
+### 3. CRÉER UN NOUVEAU COMPTE BANCAIRE
+### POST /api/assets
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Compte Épargne TD",
+  "type": 0,
+  "currentValue": 25000.00,
+  "purchaseValue": 20000.00,
+  "purchaseDate": "2023-01-15",
+  "currency": "CAD",
+  "description": "Compte épargne à haut intérêt TD",
+  "isLiquid": true
+}
+
+###
+
+### 4. CRÉER UN INVESTISSEMENT BOURSIER
+### POST /api/assets
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Actions Apple (AAPL)",
+  "type": 1,
+  "currentValue": 45000.00,
+  "purchaseValue": 38000.00,
+  "purchaseDate": "2022-06-10",
+  "currency": "CAD",
+  "description": "100 actions Apple Inc.",
+  "isLiquid": true
+}
+
+###
+
+### 5. CRÉER UN BIEN IMMOBILIER
+### POST /api/assets
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Appartement Montréal",
+  "type": 2,
+  "currentValue": 450000.00,
+  "purchaseValue": 380000.00,
+  "purchaseDate": "2020-03-01",
+  "currency": "CAD",
+  "description": "3 1/2, Plateau Mont-Royal, 850 pi²",
+  "isLiquid": false
+}
+
+###
+
+### 6. CRÉER UNE CRYPTO-MONNAIE
+### POST /api/assets
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Bitcoin Portfolio",
+  "type": 3,
+  "currentValue": 75000.00,
+  "purchaseValue": 60000.00,
+  "purchaseDate": "2021-11-20",
+  "currency": "CAD",
+  "description": "1.5 BTC sur Binance",
+  "isLiquid": true
+}
+
+###
+
+### 7. CRÉER UN VÉHICULE
+### POST /api/assets
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Tesla Model 3",
+  "type": 4,
+  "currentValue": 48000.00,
+  "purchaseValue": 55000.00,
+  "purchaseDate": "2022-09-15",
+  "currency": "CAD",
+  "description": "2022, Long Range, 25,000 km",
+  "isLiquid": false
+}
+
+###
+
+### 8. CRÉER UN ACTIF "AUTRE"
+### POST /api/assets
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Montres de collection",
+  "type": 5,
+  "currentValue": 12000.00,
+  "purchaseValue": 8000.00,
+  "purchaseDate": "2023-05-10",
+  "currency": "CAD",
+  "description": "Rolex Submariner + Omega Speedmaster",
+  "isLiquid": true
+}
+
+###
+
+### 9. OBTENIR UN ACTIF PAR ID
+### GET /api/assets/{id}
+### Remplacer {id} par l'ID réel retourné lors de la création
+GET http://localhost:5152/api/assets/1
+Accept: application/json
+
+###
+
+### 10. METTRE À JOUR UN ACTIF
+### PUT /api/assets/{id}
+### IMPORTANT: Inclure l'ID dans le body ET dans l'URL
+PUT http://localhost:5152/api/assets/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Compte Épargne TD (Mise à jour)",
+  "type": 0,
+  "currentValue": 27500.00,
+  "purchaseValue": 20000.00,
+  "purchaseDate": "2023-01-15",
+  "currency": "CAD",
+  "description": "Compte épargne à haut intérêt TD - Taux bonifié 4.5%",
+  "isLiquid": true
+}
+
+###
+
+### 11. SUPPRIMER UN ACTIF
+### DELETE /api/assets/{id}
+DELETE http://localhost:5152/api/assets/1
+
+###
+
+### ========================================
+### TESTS DE VALIDATION
+### ========================================
+
+### 12. TESTER ACTIF SANS NOM (devrait échouer - 400 Bad Request)
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "",
+  "type": 0,
+  "currentValue": 1000.00,
+  "currency": "CAD",
+  "isLiquid": true
+}
+
+###
+
+### 13. TESTER ACTIF AVEC TYPE INVALIDE (devrait échouer)
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Test Invalide",
+  "type": 999,
+  "currentValue": 1000.00,
+  "currency": "CAD",
+  "isLiquid": true
+}
+
+###
+
+### 14. TESTER ACTIF AVEC VALEUR NÉGATIVE (devrait échouer)
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Test Négatif",
+  "type": 0,
+  "currentValue": -5000.00,
+  "currency": "CAD",
+  "isLiquid": true
+}
+
+###
+
+### ========================================
+### SCÉNARIO COMPLET DE TEST
+### ========================================
+
+### SCÉNARIO 1: Ajouter 3 actifs de types différents
+### Étape 1: Créer un compte bancaire
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Compte Chèque RBC",
+  "type": 0,
+  "currentValue": 8500.00,
+  "currency": "CAD",
+  "description": "Compte courant principal",
+  "isLiquid": true
+}
+
+###
+
+### Étape 2: Créer un investissement
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "ETF S&P 500",
+  "type": 1,
+  "currentValue": 35000.00,
+  "purchaseValue": 30000.00,
+  "purchaseDate": "2022-01-10",
+  "currency": "CAD",
+  "description": "VOO - Vanguard S&P 500 ETF",
+  "isLiquid": true
+}
+
+###
+
+### Étape 3: Créer un bien immobilier
+POST http://localhost:5152/api/assets
+Content-Type: application/json
+
+{
+  "name": "Condo Toronto",
+  "type": 2,
+  "currentValue": 680000.00,
+  "purchaseValue": 550000.00,
+  "purchaseDate": "2019-05-20",
+  "currency": "CAD",
+  "description": "2 chambres, Downtown, King West",
+  "isLiquid": false
+}
+
+###
+
+### Étape 4: Vérifier la valeur totale (devrait être 723,500 CAD)
+GET http://localhost:5152/api/assets/total-value
+Accept: application/json
+
+###
+
+### Étape 5: Lister tous les actifs
+GET http://localhost:5152/api/assets
+Accept: application/json
+
+###
+
+### ========================================
+### NOTES
+### ========================================
+# 
+# - Remplacer {id} par l'ID réel des actifs créés
+# - L'API devrait retourner l'actif créé avec son ID auto-généré
+# - La valeur totale est calculée côté backend (somme des currentValue)
+# - Les types d'actifs (AssetType enum):
+#   0 = BankAccount (Compte Bancaire)
+#   1 = Investment (Investissement)
+#   2 = RealEstate (Immobilier)
+#   3 = Cryptocurrency (Crypto-monnaie)
+#   4 = Vehicle (Véhicule)
+#   5 = Other (Autre)
+#
+# - isLiquid = true : actif facilement convertible en cash
+# - isLiquid = false : actif non liquide (immobilier, véhicule, etc.)
+#
+# ========================================
