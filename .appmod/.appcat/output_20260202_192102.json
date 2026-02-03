@@ -1,0 +1,831 @@
+{
+  "version": "1.0.0",
+  "producer": ".NET AppCAT CLI",
+  "metadata": {
+    "analysisStartTime": "2026-02-03T00:21:24.6957849Z",
+    "analysisEndTime": "2026-02-03T00:21:36.2971751Z",
+    "privacyMode": "Protected",
+    "privacyModeHelpUrl": "https://go.microsoft.com/fwlink/?linkid=2271074",
+    "targetIds": [
+      "AppService.Windows",
+      "AppService.Linux",
+      "AKS.Linux",
+      "AKS.Windows",
+      "ACA",
+      "AppServiceContainer.Linux",
+      "AppServiceContainer.Windows",
+      "AppServiceManagedInstance.Windows"
+    ],
+    "targetDisplayNames": [
+      "Azure App Service",
+      "Azure Kubernetes Service",
+      "Azure Container Apps",
+      "Azure App Service Container"
+    ],
+    "os": [
+      "windows",
+      "linux"
+    ]
+  },
+  "summary": {
+    "totalProjects": 2,
+    "totalIssues": 5,
+    "totalIncidents": 15,
+    "totalEffort": 35,
+    "charts": {
+      "severity": {
+        "mandatory": 0,
+        "optional": 5,
+        "potential": 10,
+        "information": 0
+      },
+      "category": {
+        "Connection": 2,
+        "Local": 6,
+        "Security": 4,
+        "HTTP": 2,
+        "Dockerfile": 1
+      }
+    }
+  },
+  "projects": [
+    {
+      "path": "FinanceApp\\FinanceApp.csproj",
+      "issues": 4,
+      "storyPoints": 30,
+      "properties": {
+        "appName": "FinanceApp",
+        "frameworks": [
+          "net8.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ]
+      },
+      "incidents": [
+        {
+          "ruleId": "Connection.0001",
+          "incidentId": "4a54ede8-11f1-4fb0-ae6c-bcb7e0e4aee5",
+          "location": "FinanceApp\\appsettings.Development.json",
+          "locationKind": "File",
+          "snippet": "DefaultConnection",
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Connection.0001",
+          "incidentId": "e9ead649-6789-45c9-a36c-da859c7d70e9",
+          "location": "FinanceApp\\appsettings.json",
+          "locationKind": "File",
+          "snippet": "DefaultConnection",
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Local.0006",
+          "incidentId": "d7330c36-7a0b-40df-b701-a3ab8cae5cd0",
+          "location": "FinanceApp\\Program.cs",
+          "locationKind": "File",
+          "snippet": "http://",
+          "line": 162,
+          "column": 18,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Local.0006",
+          "incidentId": "ffcc3835-eb91-47ba-9c8c-b27396a5ef1c",
+          "location": "FinanceApp\\Program.cs",
+          "locationKind": "File",
+          "snippet": "http://",
+          "line": 163,
+          "column": 18,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Local.0006",
+          "incidentId": "e7693246-aa26-4809-b0e3-2c3a8c361bdd",
+          "location": "FinanceApp\\Program.cs",
+          "locationKind": "File",
+          "snippet": "http://",
+          "line": 164,
+          "column": 18,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Local.0006",
+          "incidentId": "a3e57251-2aa4-44a6-ae49-44f4c70daf40",
+          "location": "FinanceApp\\Program.cs",
+          "locationKind": "File",
+          "snippet": "http://",
+          "line": 165,
+          "column": 18,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Local.0006",
+          "incidentId": "b9102ebe-19d1-442c-9aa8-d46b5466fb59",
+          "location": "FinanceApp\\Program.cs",
+          "locationKind": "File",
+          "snippet": "http://",
+          "line": 166,
+          "column": 18,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Security.0003",
+          "incidentId": "06aa58c2-da4a-43f1-912b-b541990394a1",
+          "location": "FinanceApp\\Migrations\\20260202214951_AddUserTable.Designer.cs",
+          "locationKind": "File",
+          "snippet": "password",
+          "line": 152,
+          "column": 39,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "mandatory"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Security.0003",
+          "incidentId": "41882688-7891-419e-b20a-43e1a83cdd2f",
+          "location": "FinanceApp\\Migrations\\20260202215011_AddUsersTableAuth.Designer.cs",
+          "locationKind": "File",
+          "snippet": "password",
+          "line": 152,
+          "column": 39,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "mandatory"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Security.0003",
+          "incidentId": "e985b977-608c-40d5-a38c-4c5637f4fa54",
+          "location": "FinanceApp\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+          "locationKind": "File",
+          "snippet": "password",
+          "line": 149,
+          "column": 39,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "mandatory"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "HTTP.0001",
+          "incidentId": "35dfbcdb-1bd8-4cf4-9d3c-05dc104bd026",
+          "location": "FinanceApp\\Services\\GeminiService.cs",
+          "locationKind": "File",
+          "snippet": "System.Net.Http.HttpClient",
+          "line": 21,
+          "column": 21,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "HTTP.0001",
+          "incidentId": "a89d81fd-7d76-4c09-81b5-bb83e47acef3",
+          "location": "FinanceApp\\Services\\GeminiService.cs",
+          "locationKind": "File",
+          "snippet": "System.Net.Http.HttpClient",
+          "line": 45,
+          "column": 8,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Local.0006",
+          "incidentId": "ed31eaf7-c4f8-45d0-b100-dc902795bbea",
+          "location": "FinanceApp\\Services\\GeminiService.cs",
+          "locationKind": "File",
+          "snippet": "https://",
+          "line": 24,
+          "column": 47,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppService.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AKS.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "ACA": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 1,
+              "severity": "potential"
+            }
+          },
+          "labels": []
+        },
+        {
+          "ruleId": "Security.0003",
+          "incidentId": "753c6f05-17ba-41f6-aff3-e77796700c9d",
+          "location": "FinanceApp\\Models\\DTOs\\RegisterDto.cs",
+          "locationKind": "File",
+          "snippet": "password",
+          "line": 38,
+          "column": 13,
+          "targets": {
+            "AppService.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppService.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AKS.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "ACA": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 3,
+              "severity": "optional"
+            },
+            "AppServiceManagedInstance.Windows": {
+              "effort": 3,
+              "severity": "mandatory"
+            }
+          },
+          "labels": []
+        }
+      ]
+    },
+    {
+      "path": ".",
+      "issues": 1,
+      "storyPoints": 5,
+      "properties": {
+        "appName": "",
+        "frameworks": [],
+        "languages": [
+          ""
+        ],
+        "tools": [
+          "MSBuild"
+        ]
+      },
+      "incidents": [
+        {
+          "ruleId": "Dockerfile.0101",
+          "incidentId": "bd4e116b-f366-4ed7-a132-820a5f852f60",
+          "location": ".",
+          "locationKind": "file",
+          "message": "File(s) missing",
+          "snippet": "",
+          "targets": {
+            "AppService.Windows": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "AppService.Linux": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "AKS.Linux": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "AKS.Windows": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "ACA": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Linux": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "AppServiceContainer.Windows": {
+              "effort": 5,
+              "severity": "optional"
+            }
+          },
+          "labels": []
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "Connection.0001": {
+      "id": "Connection.0001",
+      "description": "Cha\u00EEne de connexion d\u00E9tect\u00E9e. Il n\u2019est peut-\u00EAtre pas disponible lors de la migration de votre application vers Azure.\n\nV\u00E9rifiez qu\u2019il fonctionne \u00E0 partir d\u2019Azure. Si vous vous connectez \u00E0 une base de donn\u00E9es, vous devrez peut-\u00EAtre migrer la base de donn\u00E9es vers Azure. Il existe plusieurs fa\u00E7ons de le faire :\n    1. Migrez vers la base de donn\u00E9es Azure SQL pour obtenir des avantages suppl\u00E9mentaires (voir le lien ci-dessous).\n    2. Envisagez Azure SQL Managed Instance si vous avez besoin de fonctionnalit\u00E9s qui ne sont pas disponibles dans la base de donn\u00E9es Azure SQL et que vous ne voulez pas utiliser de machine virtuelle.\n    3. Migrez directement vos serveurs de base de donn\u00E9es pour SQL Server sur des machines virtuelles Azure.\n\nPour \u00E9valuer l\u2019effort de migration de base de donn\u00E9es, vous pouvez utiliser Azure Migrate outil, consultez le lien ci-dessous.",
+      "title": "La cha\u00EEne de connexion est d\u00E9tect\u00E9e",
+      "severity": "potential",
+      "effort": 3,
+      "links": [
+        {
+          "title": "Migrer la base de donn\u00E9es SQL Server vers Azure",
+          "url": "https://go.microsoft.com/fwlink/?LinkID=2251731"
+        },
+        {
+          "title": "Azure SQL Managed Instance",
+          "url": "https://go.microsoft.com/fwlink/?LinkID=2251613"
+        },
+        {
+          "title": "Azure Migrate",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2252410"
+        }
+      ],
+      "labels": []
+    },
+    "Local.0006": {
+      "id": "Local.0006",
+      "description": "Votre application a des URL cod\u00E9es en dur qui peuvent correspondre \u00E0 des services qui ne sont pas accessibles sur Azure.\n\nV\u00E9rifiez et assurez-vous que l\u2019application tente d\u2019acc\u00E9der aux URL qui seraient disponibles \u00E0 partir d\u2019Azure. Vous devrez peut-\u00EAtre \u00E9galement migrer ces services vers Azure. Ainsi, vous b\u00E9n\u00E9ficierez d\u2019une latence plus faible dans le cloud.\n\nSi votre application doit d\u00E9pendre de services qui s\u2019ex\u00E9cutent localement, vous pouvez connecter vos r\u00E9seaux Azure et locaux avec ExpressRoute, des connexions hybrides ou des solutions VPN.",
+      "title": "URL cod\u00E9es en dur d\u00E9tect\u00E9es",
+      "severity": "potential",
+      "effort": 1,
+      "links": [
+        {
+          "title": "ExpressRoute",
+          "url": "https://go.microsoft.com/fwlink/?LinkID=2250577"
+        },
+        {
+          "title": "Connexions hybrides",
+          "url": "https://go.microsoft.com/fwlink/?LinkID=2242588"
+        },
+        {
+          "title": "Connecter un r\u00E9seau local",
+          "url": "https://go.microsoft.com/fwlink/?LinkID=2242591"
+        }
+      ],
+      "labels": []
+    },
+    "Security.0003": {
+      "id": "Security.0003",
+      "description": "Hardcoded sensitive data detected. \n\n Avoid placing sensitive data such as passwords, ids, tokens etc., directly in config files and code since it compromises the security of your application. \n\n Use Azure App Configuration or Azure KeyVault to store secrets.",
+      "title": "Hardcoded sensitive data detected",
+      "severity": "optional",
+      "effort": 3,
+      "links": [
+        {
+          "title": "Centralized app configuration and security",
+          "url": "https://go.microsoft.com/fwlink/?LinkID=2250733"
+        }
+      ],
+      "labels": []
+    },
+    "HTTP.0001": {
+      "id": "HTTP.0001",
+      "description": "Votre application tente d\u2019atteindre des ressources externes via le protocole HTTP.\n\nV\u00E9rifiez que les ressources auxquelles il tente d\u2019acc\u00E9der sont accessibles \u00E0 partir de l\u2019environnement Azure. Si ces requ\u00EAtes HTTP sont envoy\u00E9es \u00E0 des services internes ou \u00E0 des services h\u00E9berg\u00E9s localement, vous devrez probablement \u00E9galement migrer ces services vers Azure.\n\nN\u2019oubliez pas \u00E9galement que Azure App Service prend en charge le port 80 pour HTTP et le port 443 pour le trafic HTTPS. Si vous utilisez d\u2019autres ports, vous devez les mettre \u00E0 jour avant de passer \u00E0 Azure.",
+      "title": "L\u2019acc\u00E8s aux ressources externes via HTTP est d\u00E9tect\u00E9",
+      "severity": "potential",
+      "effort": 3,
+      "links": [
+        {
+          "title": "Fonctionnalit\u00E9s r\u00E9seau Azure App Service",
+          "url": "https://go.microsoft.com/fwlink/?LinkID=2243264"
+        }
+      ],
+      "labels": []
+    },
+    "Dockerfile.0101": {
+      "id": "Dockerfile.0101",
+      "description": "Ensure Dockerfile exists in the repository",
+      "title": "Dockerfile Missing",
+      "severity": "optional",
+      "effort": 5,
+      "links": [
+        {
+          "title": "docker",
+          "url": "https://docker.com"
+        }
+      ],
+      "labels": [
+        "domain=cloud-readiness",
+        "category=docker-containerization"
+      ]
+    }
+  }
+}

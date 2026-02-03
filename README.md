@@ -109,6 +109,39 @@ L'application sera disponible sur :
 
 ---
 
+## ?? Démarrage Rapide (Nouveau !)
+
+### Option 1 : Script Automatique (Recommandé)
+
+```powershell
+# Tout démarrer en une commande
+.\start-both.ps1
+```
+
+**Ce qui se passe :**
+- ? PostgreSQL démarre automatiquement
+- ? Backend .NET démarre sur port 5153
+- ? Frontend Next.js démarre sur port 3000
+- ? Votre navigateur s'ouvre automatiquement
+
+### Option 2 : Vérifier la Configuration
+
+```powershell
+# Vérifier que tout est synchronisé
+.\check-sync.ps1
+
+# Si problème détecté, corriger automatiquement
+.\fix-sync.ps1
+```
+
+### Arrêter Tous les Services
+
+```powershell
+.\stop-both.ps1
+```
+
+---
+
 ## ?? API Endpoints
 
 ### Transactions

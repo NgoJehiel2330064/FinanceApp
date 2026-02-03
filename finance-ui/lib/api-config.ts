@@ -3,7 +3,7 @@
 
 export const API_CONFIG = {
   // URL de base de l'API C# (modifiable via .env.local)
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7219',
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5153',
   
   // Endpoints disponibles
   ENDPOINTS: {
@@ -13,7 +13,12 @@ export const API_CONFIG = {
     SUMMARY: '/api/finance/summary',
     // Nouveaux endpoints Assets
     ASSETS: '/api/assets',
-    ASSETS_TOTAL_VALUE: '/api/assets/total-value'
+    ASSETS_TOTAL_VALUE: '/api/assets/total-value',
+    PORTFOLIO_INSIGHTS: '/api/finance/portfolio-insights',
+    // Endpoints Auth
+    REGISTER: '/api/auth/register',
+    LOGIN: '/api/auth/login',
+    CHECK_EMAIL: '/api/auth/check-email'
   },
   
   // Configuration des requêtes

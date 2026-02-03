@@ -276,6 +276,7 @@ Conseil (15 mots max) :
 | **GET** | `/api/finance/summary` | Résumé financier pour une période | `?startDate=...&endDate=...` | `{ "summary": "..." }` |
 | **GET** | `/api/finance/anomalies` | Détecte les anomalies dans les dépenses | - | `{ "anomalies": [...] }` |
 | **GET** | `/api/finance/predict` | Prédiction de budget | `?monthsAhead=3` | `{ "prediction": "..." }` |
+| **GET** | `/api/finance/portfolio-insights` | Analyse du portefeuille | - | `{ "insights": [...] }` |
 
 **Détails des endpoints à implémenter :**
 
@@ -325,6 +326,20 @@ GET /api/finance/predict?monthsAhead=3
 Response:
 {
   "prediction": "Basé sur vos habitudes, vous économiserez environ 600€ dans 3 mois."
+}
+```
+
+**5. Analyse du portefeuille**
+```http
+GET /api/finance/portfolio-insights
+
+Response:
+{
+  "insights": [
+    "Votre dépense en Alimentation est élevée. Envisagez de réduire.",
+    "Vous n'avez pas d'investissements déclarés.",
+    "Votre solde moyen sur les 3 derniers mois est en baisse."
+  ]
 }
 ```
 
@@ -579,6 +594,7 @@ C:\Users\GOAT\OneDrive\Documents\FinanceApp\
   - GET /api/finance/summary ? TODO
   - GET /api/finance/anomalies ? TODO
   - GET /api/finance/predict ? TODO
+  - GET /api/finance/portfolio-insights ? TODO
 
 - ? **AssetsController** (0%)
   - Aucun endpoint implémenté
@@ -917,7 +933,7 @@ dotnet publish -c Release
 | **Controllers** | 3/3 | 100% (Transactions ?, Finance ?, Assets ?) |
 | **Modèles de données** | 2/2 | 100% (Transaction ?, Asset ?) |
 | **Services métier** | 1/1 | 100% (GeminiService créé) |
-| **Méthodes IA** | 5/5 | 100% (Conseil ?, 4 autres ?) |
+| **Méthodes IA** | 6/6 | 100% (Conseil ?, 5 autres ?) |
 | **Migrations EF** | 1 | InitialCreate appliquée |
 | **Scripts PowerShell** | 3 | start, stop, test-config |
 | **Documentation** | 7 fichiers | README, QUICK-START, TROUBLESHOOTING, SPRINT2, etc. |
@@ -982,12 +998,12 @@ TOTAL            : ??????????   80% (était 58%)
 
 **Réalisations :**
 - ? AssetsController créé (CRUD complet - 6 endpoints)
-- ? Méthodes IA implémentées (4 méthodes) :
+- ? Méthodes IA implémentées (5 méthodes) :
   - ? SuggestCategoryAsync
   - ? GenerateFinancialSummaryAsync
   - ? DetectAnomaliesAsync
   - ? PredictBudgetAsync
-- ? Endpoints FinanceController complétés (4 nouveaux endpoints)
+- ? Endpoints FinanceController complétés (5 nouveaux endpoints)
 - ? Tests manuels validés via Swagger
 - ? Documentation mise à jour (SPRINT2-IMPLEMENTATION.md)
 
@@ -1078,7 +1094,7 @@ docker-compose up -d
 docker logs postgres_db
 
 # Tester la connexion
-docker exec -it postgres_db pg_isready -U postgres
+docker exec -it postgres_db pg_isready -U postgres -d finance_db
 ```
 
 ---
@@ -1349,7 +1365,7 @@ public async Task PostTransaction_CreatesNewTransaction()
 **2.2 GenerateFinancialSummaryAsync (3h)**
 - [ ] Récupérer transactions par période
 - [ ] Calculer métriques
-- [ ] Générer résumé avec Gemini
+- [ ] Générer un résumé avec Gemini
 - [ ] Tester
 
 **2.3 DetectAnomaliesAsync (4h)**
