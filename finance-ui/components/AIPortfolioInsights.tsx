@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { API_CONFIG, getApiUrl } from '@/lib/api-config';
+import { getAuthHeaders } from '@/lib/cookie-utils';
 
 interface AIPortfolioInsightsProps {
   assetCount: number;
@@ -24,7 +25,18 @@ export default function AIPortfolioInsights({ assetCount }: AIPortfolioInsightsP
         setLoading(true);
         setError(null);
 
-        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.PORTFOLIO_INSIGHTS));
+        const userStr = sessionStorage.getItem('user');
+        if (!userStr) {
+          throw new Error('Utilisateur non connecté');
+        }
+
+        const user = JSON.parse(userStr);
+        const userId = user.id;
+
+        const response = await fetch(
+          `${getApiUrl(API_CONFIG.ENDPOINTS.PORTFOLIO_INSIGHTS)}?userId=${userId}`,
+          { headers: getAuthHeaders() }
+        );
 
         if (!response.ok) {
           throw new Error(`Erreur HTTP ${response.status}`);

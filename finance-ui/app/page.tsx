@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { API_CONFIG, getApiUrl } from '@/lib/api-config';
+import { getAuthHeaders } from '@/lib/cookie-utils';
 
 interface DashboardStats {
   soldeNet: number;
@@ -14,6 +16,7 @@ interface DashboardStats {
 }
 
 export default function AccueilPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     soldeNet: 0,
     revenus: 0,
@@ -28,18 +31,40 @@ export default function AccueilPage() {
   useEffect(() => {
     setMounted(true);
 
+    // Le middleware a déjà vérifié l'authentification
+    // On peut directement récupérer les données
+    const userStr = sessionStorage.getItem('user');
+    
+    if (!userStr) {
+      // Fallback si sessionStorage n'est pas disponible (ne devrait pas arriver ici grâce au middleware)
+      router.push('/connexion');
+      return;
+    }
+
     const fetchStats = async () => {
       try {
+        const user = JSON.parse(userStr);
+        const userId = user.id;
+
         // Récupérer les transactions
-        const transactionsRes = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TRANSACTIONS));
+        const transactionsRes = await fetch(
+          `${getApiUrl(API_CONFIG.ENDPOINTS.TRANSACTIONS)}?userId=${userId}`,
+          { headers: getAuthHeaders() }
+        );
         const transactions = transactionsRes.ok ? await transactionsRes.json() : [];
 
         // Récupérer les actifs
-        const assetsRes = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS));
+        const assetsRes = await fetch(
+          `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}?userId=${userId}`,
+          { headers: getAuthHeaders() }
+        );
         const assets = assetsRes.ok ? await assetsRes.json() : [];
 
         // Récupérer valeur totale patrimoine
-        const totalRes = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE));
+        const totalRes = await fetch(
+          `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE)}?userId=${userId}`,
+          { headers: getAuthHeaders() }
+        );
         const totalData = totalRes.ok ? await totalRes.json() : { totalValue: 0 };
 
         // Calculer les stats

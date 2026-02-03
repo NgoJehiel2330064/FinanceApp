@@ -21,6 +21,16 @@ public class Asset
     public int Id { get; set; }
 
     /// <summary>
+    /// Identifiant de l'utilisateur propriétaire de cet actif
+    /// </summary>
+    /// <remarks>
+    /// Clé étrangère vers la table Users
+    /// Permet d'isoler les données par utilisateur
+    /// </remarks>
+    [Required]
+    public int UserId { get; set; }
+
+    /// <summary>
     /// Nom de l'actif (ex: "Compte Courant BNP", "Appartement Paris", "Portefeuille Crypto")
     /// </summary>
     [Required]

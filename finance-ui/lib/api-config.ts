@@ -9,7 +9,9 @@ export const API_CONFIG = {
   ENDPOINTS: {
     TRANSACTIONS: '/api/transactions',
     FINANCE_ADVICE: '/api/finance/advice',
+    FINANCE: '/api/finance',
     CATEGORIES: '/api/transactions/categories',
+      FINANCE_CHAT: '/api/finance/chat',
     SUMMARY: '/api/finance/summary',
     // Nouveaux endpoints Assets
     ASSETS: '/api/assets',
@@ -18,7 +20,10 @@ export const API_CONFIG = {
     // Endpoints Auth
     REGISTER: '/api/auth/register',
     LOGIN: '/api/auth/login',
-    CHECK_EMAIL: '/api/auth/check-email'
+    CHECK_EMAIL: '/api/auth/check-email',
+    GET_PROFILE: '/api/auth/profile',
+    CHANGE_PASSWORD: '/api/auth/change-password',
+    DELETE_ACCOUNT: '/api/auth/delete-account'
   },
   
   // Configuration des requêtes

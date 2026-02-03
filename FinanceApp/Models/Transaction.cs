@@ -24,6 +24,16 @@ public class Transaction
     public int Id { get; set; }
 
     /// <summary>
+    /// Identifiant de l'utilisateur propriétaire de cette transaction
+    /// </summary>
+    /// <remarks>
+    /// Clé étrangère vers la table Users
+    /// Permet d'isoler les données par utilisateur
+    /// </remarks>
+    [Required]
+    public int UserId { get; set; }
+
+    /// <summary>
     /// Date et heure de la transaction
     /// </summary>
     /// <remarks>

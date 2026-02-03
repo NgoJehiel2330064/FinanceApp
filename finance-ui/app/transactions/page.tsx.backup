@@ -127,12 +127,78 @@ export default function TransactionsPage() {
     });
   };
 
+    const totalIncome = transactions
+      .filter(t => t.type === 1)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalExpense = transactions
+      .filter(t => t.type !== 1)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const topCategoryMap = transactions
+      .filter(t => t.type !== 1)
+      .reduce<Record<string, number>>((acc, t) => {
+        const key = t.category || 'Autre';
+        acc[key] = (acc[key] || 0) + Math.abs(t.amount);
+        return acc;
+      }, {});
+    const topCategory = Object.entries(topCategoryMap).sort((a, b) => b[1] - a[1])[0];
+
+    return {
+      totalIncome,
+      totalExpense,
+      topCategory: topCategory ? `${topCategory[0]} (${topCategory[1].toFixed(2)})` : 'N/A'
+    };
+  };
+
+
+    const userStr = sessionStorage.getItem('user');
+    if (!userStr) return;
+
+    const user = JSON.parse(userStr);
+    const userId = user.id;
+
+    const context = [
+      'Page: Transactions',
+      `Transaction: ${transaction.description} | ${transaction.category} | ${transaction.amount} | ${transaction.date}`,
+      `Total revenus: ${summary.totalIncome.toFixed(2)}`,
+      `Total dépenses: ${summary.totalExpense.toFixed(2)}`,
+      `Catégorie principale: ${summary.topCategory}`
+    ].join('\n');
+
+    try {
+
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FINANCE_CHAT), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          userId,
+          message: 'Donne une suggestion ou un point d’attention sur cette transaction.',
+          context,
+          page: '/transactions'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+        ...prev,
+        [transaction.id]: data.reply || 'Suggestion indisponible.'
+      }));
+    } catch (err) {
+      console.error('Erreur suggestion IA:', err);
+        ...prev,
+        [transaction.id]: 'Suggestion indisponible pour le moment.'
+      }));
+    } finally {
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
-      const userStr = sessionStorage.getItem('user');
       if (!userStr) return;
       
       const user = JSON.parse(userStr);
@@ -148,19 +214,12 @@ export default function TransactionsPage() {
 
       if (isEditing && editingId) {
         // Mode édition : PUT
-        try {
-          await transactionService.update(editingId, transactionData, userId);
-          setTransactions(prev => prev.map(t => 
-            t.id === editingId 
-              ? { ...t, ...transactionData }
-              : t
-          ));
-        } catch (err) {
-          console.error('Erreur édition transaction:', err);
-          alert(`Impossible de modifier la transaction: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
-          setSubmitting(false);
-          return;
-        }
+        await transactionService.update(editingId, transactionData, userId);
+        setTransactions(prev => prev.map(t => 
+          t.id === editingId 
+            ? { ...t, ...transactionData }
+            : t
+        ));
       } else {
         // Mode création : POST
         const response = await fetch(`${getApiUrl(API_CONFIG.ENDPOINTS.TRANSACTIONS)}?userId=${userId}`, {
@@ -303,6 +362,29 @@ export default function TransactionsPage() {
           </h1>
           <p className="text-gray-400 text-lg">Gérez vos revenus et dépenses</p>
         </header>
+
+        {/* Conseil IA */}
+        {aiAdvice && (
+          <div className={`backdrop-blur-xl bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/30 rounded-2xl p-6 mb-8 animate-fadeIn`}>
+            <div className="flex items-start gap-4">
+              <div className="text-3xl animate-pulse">✨</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-400">
+                  Conseil de l&apos;IA
+                </h3>
+                {loadingAdvice ? (
+                  <div className="flex gap-2">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                ) : (
+                  <p className="text-gray-300 leading-relaxed">{aiAdvice}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mode déconnecté */}
         {isOffline && (
@@ -694,4 +776,3 @@ export default function TransactionsPage() {
     </div>
   );
 }
-

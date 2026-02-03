@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { API_CONFIG, getApiUrl } from '@/lib/api-config';
+import { getAuthHeaders } from '@/lib/cookie-utils';
 import { Asset, AssetFormData } from '@/types/asset';
 import AssetList from '@/components/AssetList';
 import AssetModal from '@/components/AssetModal';
 import AIPortfolioInsights from '@/components/AIPortfolioInsights';
 
 export default function PatrimoinePage() {
+  const router = useRouter();
   // STATE MANAGEMENT - PATRIMOINE (ASSETS)
   const [assets, setAssets] = useState<Asset[]>([]);
   const [totalAssetValue, setTotalAssetValue] = useState<number>(0);
@@ -21,12 +24,25 @@ export default function PatrimoinePage() {
   useEffect(() => {
     setMounted(true);
 
+    // Vérifier l'authentification
+    const userStr = sessionStorage.getItem('user');
+    if (!userStr) {
+      router.push('/connexion');
+      return;
+    }
+
     const fetchAssets = async () => {
       try {
         setAssetsLoading(true);
         setAssetsError(null);
         
-        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS));
+        const user = JSON.parse(userStr);
+        const userId = user.id;
+        
+        const response = await fetch(
+          `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}?userId=${userId}`,
+          { headers: getAuthHeaders() }
+        );
         
         if (!response.ok) {
           throw new Error(`Erreur HTTP ${response.status}`);
@@ -35,7 +51,10 @@ export default function PatrimoinePage() {
         const data: Asset[] = await response.json();
         setAssets(data);
         
-        const totalResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE));
+        const totalResponse = await fetch(
+          `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE)}?userId=${userId}`,
+          { headers: getAuthHeaders() }
+        );
         if (totalResponse.ok) {
           const totalData = await totalResponse.json();
           setTotalAssetValue(typeof totalData === 'number' ? totalData : totalData.totalValue || 0);
@@ -54,15 +73,21 @@ export default function PatrimoinePage() {
   // HANDLERS
   const handleAssetSubmit = async (assetData: AssetFormData) => {
     try {
+      const userStr = sessionStorage.getItem('user');
+      if (!userStr) return;
+      
+      const user = JSON.parse(userStr);
+      const userId = user.id;
+      
       const url = editingAsset 
-        ? `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}/${editingAsset.id}`
-        : getApiUrl(API_CONFIG.ENDPOINTS.ASSETS);
+        ? `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}/${editingAsset.id}?userId=${userId}`
+        : `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}?userId=${userId}`;
       
       const method = editingAsset ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
         method,
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(),
         body: JSON.stringify(assetData)
       });
 
@@ -71,12 +96,18 @@ export default function PatrimoinePage() {
       }
 
       // Recharger les actifs depuis l'API
-      const assetsResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS));
+      const assetsResponse = await fetch(
+        `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}?userId=${userId}`,
+        { headers: getAuthHeaders() }
+      );
       const updatedAssets: Asset[] = await assetsResponse.json();
       setAssets(updatedAssets);
 
       // Recharger la valeur totale
-      const totalResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE));
+      const totalResponse = await fetch(
+        `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE)}?userId=${userId}`,
+        { headers: getAuthHeaders() }
+      );
       if (totalResponse.ok) {
         const totalData = await totalResponse.json();
         setTotalAssetValue(typeof totalData === 'number' ? totalData : totalData.totalValue || 0);
@@ -101,19 +132,32 @@ export default function PatrimoinePage() {
     }
 
     try {
-      const response = await fetch(`${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}/${id}`, {
-        method: 'DELETE'
+      const userStr = sessionStorage.getItem('user');
+      if (!userStr) return;
+      
+      const user = JSON.parse(userStr);
+      const userId = user.id;
+      
+      const response = await fetch(`${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}/${id}?userId=${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
 
       if (!response.ok) {
         throw new Error('Erreur lors de la suppression');
       }
 
-      const assetsResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS));
+      const assetsResponse = await fetch(
+        `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS)}?userId=${userId}`,
+        { headers: getAuthHeaders() }
+      );
       const updatedAssets: Asset[] = await assetsResponse.json();
       setAssets(updatedAssets);
 
-      const totalResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE));
+      const totalResponse = await fetch(
+        `${getApiUrl(API_CONFIG.ENDPOINTS.ASSETS_TOTAL_VALUE)}?userId=${userId}`,
+        { headers: getAuthHeaders() }
+      );
       if (totalResponse.ok) {
         const totalData = await totalResponse.json();
         setTotalAssetValue(typeof totalData === 'number' ? totalData : totalData.totalValue || 0);
