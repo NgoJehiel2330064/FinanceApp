@@ -1,16 +1,16 @@
-# 🚀 GUIDE COMPLET : Déployer sur Vercel + Railway
+﻿# GUIDE COMPLET : Déployer sur Vercel + Railway
 
-## ✅ PRÉPARATION COMPLÈTE (Déjà fait!)
+## ✅ PRÉPARATION COMPLÈTE (Déjà fait !)
 
 Tous les fichiers nécessaires sont prêts :
 - ✅ `Dockerfile` pour Railway
-- ✅ `vercel.json` pour Vercel  
+- ✅ `vercel.json` pour Vercel
 - ✅ CORS configuré pour production
 - ✅ `.dockerignore` et `.gitignore`
 
 ---
 
-## 📋 ÉTAPE 1 : Installer Git (Si pas encore fait)
+## 📋 ÉTAPE 1 : Installer Git (si pas encore fait)
 
 1. Téléchargez Git : https://git-scm.com/download/win
 2. Installez avec les options par défaut
@@ -70,14 +70,14 @@ git push -u origin main
 5. Sélectionnez votre repo **"FinanceApp"**
 6. Railway détectera automatiquement le `Dockerfile` ✅
 
-### B. Ajouter PostgreSQL :
+### B. Ajouter PostgreSQL
 
 1. Dans votre projet Railway, cliquez sur **"+ New"**
 2. Sélectionnez **"Database"** → **"Add PostgreSQL"**
 3. Railway créera automatiquement la base de données
 4. La variable `DATABASE_URL` sera générée automatiquement
 
-### C. Configurer les variables d'environnement :
+### C. Configurer les variables d'environnement (Railway)
 
 1. Cliquez sur votre service (le container avec le Dockerfile)
 2. Allez dans l'onglet **"Variables"**
@@ -85,43 +85,58 @@ git push -u origin main
 
 ```
 ConnectionStrings__DefaultConnection
-→ Valeur : ${{Postgres.DATABASE_URL}}
+-> Valeur : ${Postgres.DATABASE_URL}
 
-JwtSettings__SecretKey
-→ Valeur : Y0uR_sUp3r_s3cr3t_jwt_k3y_2025_F1N@nc3@pp!
+Jwt__Key
+-> Valeur : <CHANGE_ME>
 
-JwtSettings__Issuer
-→ Valeur : FinanceApp
+Jwt__Issuer
+-> Valeur : FinanceApp
 
-JwtSettings__Audience
-→ Valeur : FinanceAppUsers
+Jwt__Audience
+-> Valeur : FinanceAppUsers
+
+Jwt__ExpiresMinutes
+-> Valeur : 60
 
 ASPNETCORE_ENVIRONMENT
-→ Valeur : Production
+-> Valeur : Production
 
 Groq__ApiKey
-→ Valeur : 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
+-> Valeur : <CHANGE_ME>
+
+Groq__Model
+-> Valeur : mixtral-8x7b-32768
+
+Groq__BaseUrl
+-> Valeur : https://api.groq.com/openai/v1
+
+Groq__Temperature
+-> Valeur : 0.3
+
+Groq__MaxTokens
+-> Valeur : 150
 ```
 
-### D. Obtenir l'URL de votre API :
+### D. Obtenir l'URL de votre API
 
 1. Allez dans l'onglet **"Settings"** de votre service
 2. Dans **"Networking"**, cliquez sur **"Generate Domain"**
 3. Railway vous donnera une URL comme : `https://financeapp-production-xxxx.up.railway.app`
-4. **✍️ NOTEZ CETTE URL** - vous en aurez besoin pour Vercel !
+4. **Notez cette URL** - vous en aurez besoin pour Vercel
 
-### E. Vérifier le déploiement :
+### E. Vérifier le déploiement
 
 1. Attendez que le déploiement se termine (2-3 minutes)
 2. Allez dans l'onglet **"Deployments"** pour voir les logs
-3. Testez votre API : Ouvrez `https://VOTRE-URL-RAILWAY/swagger` dans un navigateur
-4. Vous devriez voir la documentation Swagger ✅
+3. Testez votre API : Ouvrez `https://VOTRE-URL-RAILWAY/health`
+4. Vous devriez voir un JSON avec `status: "ok"`
 
 ---
 
 ## ▲ ÉTAPE 4 : Déployer le FRONTEND sur Vercel
 
-### A. Créer un compte et importer le projet :
+### A. Créer un compte et importer le projet
 
 1. Allez sur https://vercel.com
 2. Cliquez **"Add New..."** → **"Project"**
@@ -129,7 +144,7 @@ Groq__ApiKey
 4. Si ce n'est pas déjà fait, connectez votre compte GitHub
 5. Trouvez et sélectionnez votre repo **"FinanceApp"**
 
-### B. Configurer le projet :
+### B. Configurer le projet
 
 Dans la page de configuration :
 
@@ -138,31 +153,28 @@ Dans la page de configuration :
 3. **Build Command** : `npm run build` (automatique)
 4. **Output Directory** : `.next` (automatique)
 
-### C. Configurer les variables d'environnement :
+### C. Configurer les variables d'environnement (Vercel)
 
 1. Dans la section **"Environment Variables"**, ajoutez :
 
 ```
 NEXT_PUBLIC_API_URL
-→ Valeur : https://VOTRE-URL-RAILWAY.up.railway.app
-(⚠️ Remplacez par l'URL de Railway de l'étape 3D)
-
-NEXT_PUBLIC_GEMINI_API_KEY
-→ Valeur : AIzaSyCpYUPvjgvhPNtCjlJDg0ddmwCXPvUZRCg
+-> Valeur : https://VOTRE-URL-RAILWAY.up.railway.app
+(Remplacez par l'URL de Railway de l'étape 3D)
 ```
 
 2. Assurez-vous de sélectionner **"Production"**, **"Preview"**, et **"Development"**
 
-### D. Déployer :
+### D. Déployer
 
 1. Cliquez **"Deploy"**
 2. Attendez 2-3 minutes
 3. Vercel vous donnera une URL comme : `https://finance-app-xyz.vercel.app`
-4. **✍️ NOTEZ CETTE URL** - c'est l'URL de votre application !
+4. **Notez cette URL** - c'est l'URL de votre application
 
 ---
 
-## 🔧 ÉTAPE 5 : Configurer CORS (Important!)
+## 🔧 ÉTAPE 5 : Configurer CORS (Important)
 
 Le backend doit autoriser les requêtes de votre frontend Vercel.
 
@@ -173,8 +185,8 @@ Le backend doit autoriser les requêtes de votre frontend Vercel.
 
 ```
 AllowedOrigins__0
-→ Valeur : https://finance-app-xyz.vercel.app
-(⚠️ Remplacez par VOTRE URL Vercel de l'étape 4D)
+-> Valeur : https://finance-app-xyz.vercel.app
+(Remplacez par VOTRE URL Vercel de l'étape 4D)
 ```
 
 5. Le service redémarrera automatiquement
@@ -183,16 +195,16 @@ AllowedOrigins__0
 
 ## 🎉 ÉTAPE 6 : TESTER !
 
-### Testez votre application :
+### Testez votre application
 
 1. Ouvrez l'URL Vercel dans votre navigateur : `https://finance-app-xyz.vercel.app`
 2. Créez un compte
 3. Ajoutez des transactions
 4. Testez toutes les fonctionnalités
 
-### Partagez avec vos amis :
+### Partagez avec vos amis
 
-- Envoyez-leur simplement l'URL Vercel !
+- Envoyez-leur simplement l'URL Vercel
 - Ils peuvent l'utiliser sur ordinateur, téléphone, tablette
 - Disponible 24/7 partout dans le monde
 
@@ -228,18 +240,18 @@ git commit -m "Description de vos changements"
 git push
 ```
 
-**Railway et Vercel redéploieront automatiquement !** 🎉
+**Railway et Vercel redéploieront automatiquement !**
 
 ---
 
 ## 💰 COÛTS
 
-### Vercel (Frontend) :
+### Vercel (Frontend)
 - ✅ **Gratuit** pour usage personnel
 - 100 GB de bande passante / mois
 - Builds illimités
 
-### Railway (Backend) :
+### Railway (Backend)
 - ✅ **$5 de crédit gratuit** par mois
 - Largement suffisant pour commencer
 - Si vous dépassez : ~$0.01 par heure d'utilisation
@@ -249,18 +261,18 @@ git push
 ## 🆘 DÉPANNAGE
 
 ### Erreur : "Load failed" sur mobile
-→ Vérifiez que `NEXT_PUBLIC_API_URL` sur Vercel pointe vers Railway
+-> Vérifiez que `NEXT_PUBLIC_API_URL` sur Vercel pointe vers Railway
 
 ### Erreur CORS
-→ Vérifiez que `AllowedOrigins__0` sur Railway contient votre URL Vercel
+-> Vérifiez que `AllowedOrigins__0` sur Railway contient votre URL Vercel
 
 ### Backend ne démarre pas
-→ Vérifiez les logs dans Railway (onglet "Deployments")
-→ Assurez-vous que PostgreSQL est bien connecté
+-> Vérifiez les logs dans Railway (onglet "Deployments")
+-> Assurez-vous que PostgreSQL est bien connecté
 
 ### Frontend affiche une erreur 500
-→ Vérifiez que le backend Railway est en ligne
-→ Testez l'API : `https://VOTRE-URL-RAILWAY/swagger`
+-> Vérifiez que le backend Railway est en ligne
+-> Testez l'API : `https://VOTRE-URL-RAILWAY/health`
 
 ---
 
@@ -279,4 +291,4 @@ git push
 
 ---
 
-**🎊 Félicitations ! Votre application est maintenant accessible partout dans le monde !**
+**Félicitations ! Votre application est maintenant accessible partout dans le monde.**

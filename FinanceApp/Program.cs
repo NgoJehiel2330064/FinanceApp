@@ -229,6 +229,22 @@ builder.Services.AddCors(options =>
 // � partir d'ici, on ne peut plus ajouter de services
 var app = builder.Build();
 
+// ----------------------------------------------------------------------------
+// MIGRATIONS AUTOMATIQUES (Production incluse)
+// ----------------------------------------------------------------------------
+// Applique les migrations EF Core au démarrage pour garder la base à jour
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+    app.Logger.LogInformation("Migrations EF Core appliquées avec succès.");
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Erreur lors de l'application des migrations EF Core.");
+}
+
 // ============================================================================
 // CONFIGURATION DU PIPELINE HTTP (Middleware)
 // ============================================================================
@@ -304,6 +320,15 @@ app.UseAuthorization();
 // 7. ASP.NET Core s�rialise le r�sultat en JSON
 // 8. Retourne la r�ponse HTTP 200 avec le JSON
 app.MapControllers();
+
+// ----------------------------------------------------------------------------
+// HEALTH CHECK
+// ----------------------------------------------------------------------------
+app.MapGet("/health", () => Results.Json(new
+{
+    status = "ok",
+    timestampUtc = DateTime.UtcNow
+}));
 
 // ============================================================================
 // D�MARRAGE DE L'APPLICATION

@@ -1,25 +1,30 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
 import { setUserCookie } from '@/lib/cookie-utils';
 
+function RegisteredSuccessMessage({ onMessage }: { onMessage: (message: string) => void }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('registered') === 'true') {
+      onMessage('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+    }
+  }, [searchParams, onMessage]);
+
+  return null;
+}
+
 export default function ConnexionPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (searchParams.get('registered') === 'true') {
-      setSuccessMessage('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +68,9 @@ export default function ConnexionPage() {
 
   return (
     <div className="min-h-screen bg-[#0f0f1e] flex items-center justify-center px-6 -mt-16">
+      <Suspense fallback={null}>
+        <RegisteredSuccessMessage onMessage={setSuccessMessage} />
+      </Suspense>
       {/* Cercles flous en arrière-plan */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-violet-600/30 rounded-full blur-[120px]"></div>
@@ -142,8 +150,8 @@ export default function ConnexionPage() {
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm">
               Pas encore de compte ?{' '}
-              <Link 
-                href="/inscription" 
+              <Link
+                href="/inscription"
                 className="text-violet-400 hover:text-violet-300 transition-colors font-medium"
               >
                 Créer un compte
