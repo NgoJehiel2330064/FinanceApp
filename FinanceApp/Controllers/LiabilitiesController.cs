@@ -147,6 +147,12 @@ public class LiabilitiesController : ControllerBase
             liability.CreatedAt = DateTime.UtcNow;
             liability.LastUpdated = DateTime.UtcNow;
 
+            // Si MaturityDate est spécifiée, s'assurer qu'elle est en UTC
+            if (liability.MaturityDate.HasValue && liability.MaturityDate.Value.Kind == DateTimeKind.Unspecified)
+            {
+                liability.MaturityDate = DateTime.SpecifyKind(liability.MaturityDate.Value, DateTimeKind.Utc);
+            }
+
             _context.Liabilities.Add(liability);
             await _context.SaveChangesAsync();
 
@@ -212,7 +218,17 @@ public class LiabilitiesController : ControllerBase
             existingLiability.CreditLimit = liability.CreditLimit;
             existingLiability.InterestRate = liability.InterestRate;
             existingLiability.MonthlyPayment = liability.MonthlyPayment;
-            existingLiability.MaturityDate = liability.MaturityDate;
+            
+            // Si MaturityDate est spécifiée, s'assurer qu'elle est en UTC
+            if (liability.MaturityDate.HasValue && liability.MaturityDate.Value.Kind == DateTimeKind.Unspecified)
+            {
+                existingLiability.MaturityDate = DateTime.SpecifyKind(liability.MaturityDate.Value, DateTimeKind.Utc);
+            }
+            else
+            {
+                existingLiability.MaturityDate = liability.MaturityDate;
+            }
+            
             existingLiability.Currency = liability.Currency;
             existingLiability.Description = liability.Description;
             existingLiability.LastUpdated = DateTime.UtcNow;

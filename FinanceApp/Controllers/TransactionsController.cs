@@ -277,6 +277,18 @@ public class TransactionsController : ControllerBase
                 transaction.Id
             );
 
+            // SYNCHRONISATION PATRIMOINE : Mettre à jour automatiquement actifs/passifs
+            try
+            {
+                await _netWorthService.SyncTransactionImpactAsync(transaction, TransactionOperation.Create);
+                _logger.LogInformation("Synchronisation patrimoine réussie pour la transaction {Id}", transaction.Id);
+            }
+            catch (Exception syncEx)
+            {
+                _logger.LogError(syncEx, "Erreur lors de la synchronisation patrimoine pour la transaction {Id}", transaction.Id);
+                // On ne bloque pas la création, mais on log l'erreur
+            }
+
             // CreatedAtAction retourne HTTP 201 Created
             // + En-t�te Location: /api/transactions/{id}
             // + Les donn�es de la transaction dans le body
@@ -371,6 +383,18 @@ public class TransactionsController : ControllerBase
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Transaction {Id} mise à jour avec succès", id);
+
+            // SYNCHRONISATION PATRIMOINE : Mettre à jour automatiquement actifs/passifs
+            try
+            {
+                await _netWorthService.SyncTransactionImpactAsync(existingTransaction, TransactionOperation.Update);
+                _logger.LogInformation("Synchronisation patrimoine réussie pour la modification de la transaction {Id}", id);
+            }
+            catch (Exception syncEx)
+            {
+                _logger.LogError(syncEx, "Erreur lors de la synchronisation patrimoine pour la transaction {Id}", id);
+                // On ne bloque pas la modification, mais on log l'erreur
+            }
 
             // NoContent() retourne HTTP 204 (succès sans contenu)
             return NoContent();
@@ -467,6 +491,18 @@ public class TransactionsController : ControllerBase
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Transaction {Id} supprim�e avec succ�s", id);
+
+            // SYNCHRONISATION PATRIMOINE : Mettre à jour automatiquement actifs/passifs
+            try
+            {
+                await _netWorthService.SyncTransactionImpactAsync(transaction, TransactionOperation.Delete);
+                _logger.LogInformation("Synchronisation patrimoine réussie pour la suppression de la transaction {Id}", id);
+            }
+            catch (Exception syncEx)
+            {
+                _logger.LogError(syncEx, "Erreur lors de la synchronisation patrimoine pour la transaction {Id}", id);
+                // La transaction est déjà supprimée, on log juste l'erreur de sync
+            }
 
             return NoContent();
         }

@@ -56,12 +56,25 @@ public class NetWorthService : INetWorthService
                 .Where(l => l.UserId == userId)
                 .ToListAsync();
 
-            var totalAssets = assets.Sum(a => a.CurrentValue);
+            // CALCUL DU SOLDE NET DES TRANSACTIONS (liquidité automatique)
+            var transactions = await _context.Transactions
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+
+            var transactionNetBalance = transactions
+                .Sum(t => t.Type == TransactionType.Income ? t.Amount : -t.Amount);
+
+            _logger.LogInformation(
+                "Solde net des transactions pour utilisateur {UserId}: {Balance:C}",
+                userId, transactionNetBalance
+            );
+
+            var totalAssets = assets.Sum(a => a.CurrentValue) + transactionNetBalance;
             var totalLiabilities = liabilities.Sum(l => l.CurrentBalance);
             var netWorth = totalAssets - totalLiabilities;
 
             // Calculs supplémentaires
-            var liquidAssets = assets.Where(a => a.IsLiquid).Sum(a => a.CurrentValue);
+            var liquidAssets = assets.Where(a => a.IsLiquid).Sum(a => a.CurrentValue) + transactionNetBalance;
             var creditCards = liabilities.Where(l => l.Type == LiabilityType.CreditCard).ToList();
             var totalCreditUsed = creditCards.Sum(c => c.CurrentBalance);
             var totalCreditLimit = creditCards.Sum(c => c.CreditLimit ?? 0);
@@ -70,8 +83,8 @@ public class NetWorthService : INetWorthService
                 : 0;
 
             _logger.LogInformation(
-                "Patrimoine calculé pour utilisateur {UserId}: Actifs={TotalAssets:C}, Passifs={TotalLiabilities:C}, Net={NetWorth:C}",
-                userId, totalAssets, totalLiabilities, netWorth
+                "Patrimoine calculé pour utilisateur {UserId}: Actifs={TotalAssets:C} (dont {TransactionBalance:C} de transactions), Passifs={TotalLiabilities:C}, Net={NetWorth:C}",
+                userId, totalAssets, transactionNetBalance, totalLiabilities, netWorth
             );
 
             return new NetWorthSummary
@@ -81,7 +94,8 @@ public class NetWorthService : INetWorthService
                 TotalLiabilities = totalLiabilities,
                 NetWorth = netWorth,
                 LiquidAssets = liquidAssets,
-                CreditUtilization = creditUtilization,
+                TransactionBalance = transactionNetBalance,  // Retourner le solde des transactions
+                CreditUtilization = (double)creditUtilization,
                 AssetBreakdown = assets.GroupBy(a => a.Type)
                     .ToDictionary(g => g.Key.ToString(), g => g.Sum(a => a.CurrentValue)),
                 LiabilityBreakdown = liabilities.GroupBy(l => l.Type)
@@ -317,20 +331,4 @@ public enum TransactionOperation
     Create,
     Update,
     Delete
-}
-
-/// <summary>
-/// Résumé du patrimoine net
-/// </summary>
-public class NetWorthSummary
-{
-    public int UserId { get; set; }
-    public decimal TotalAssets { get; set; }
-    public decimal TotalLiabilities { get; set; }
-    public decimal NetWorth { get; set; }
-    public decimal LiquidAssets { get; set; }
-    public decimal CreditUtilization { get; set; }
-    public Dictionary<string, decimal> AssetBreakdown { get; set; } = new();
-    public Dictionary<string, decimal> LiabilityBreakdown { get; set; } = new();
-    public DateTime LastUpdated { get; set; }
 }

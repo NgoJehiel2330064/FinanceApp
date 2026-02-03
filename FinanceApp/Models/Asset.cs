@@ -163,3 +163,20 @@ public enum AssetType
     /// </summary>
     Other = 5
 }
+
+/// <summary>
+/// Résumé du patrimoine net avec détails
+/// </summary>
+public class NetWorthSummary
+{
+    public int UserId { get; set; }
+    public decimal TotalAssets { get; set; }
+    public decimal TotalLiabilities { get; set; }
+    public decimal NetWorth { get; set; }
+    public decimal LiquidAssets { get; set; }
+    public decimal TransactionBalance { get; set; }  // Solde net des transactions (revenus - dépenses)
+    public double CreditUtilization { get; set; }
+    public Dictionary<string, decimal> AssetBreakdown { get; set; } = new();
+    public Dictionary<string, decimal> LiabilityBreakdown { get; set; } = new();
+    public DateTime LastUpdated { get; set; }
+}

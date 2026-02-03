@@ -1,0 +1,28 @@
+# Fichiers .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+.vs/
+
+# Dépendances
+node_modules/
+
+# Variables d'environnement locales
+.env.local
+appsettings.Development.json
+
+# Migrations temporaires
+Migrations/*.Designer.cs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+.dockerignore

@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
+// Activer le comportement legacy des timestamps pour Npgsql (accepter DateTime sans Kind)
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 // ============================================================================
 // CR�ATION DU BUILDER
 // ============================================================================
@@ -48,6 +49,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
     // UseNpgsql() : Configure EF Core pour utiliser PostgreSQL
+    options.UseNpgsql(connectionString);
     // 
     // COMMUNICATION AVEC DOCKER :
     // 1. Votre app ASP.NET Core tourne sur Windows (localhost)
@@ -186,15 +188,20 @@ builder.Services.AddCors(options =>
     // AddPolicy() : D�finit une politique CORS nomm�e
     options.AddPolicy("AllowFrontend", policy =>
     {
+        // R�cup�ration des origines autoris�es depuis la configuration
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+            ?? new[] 
+            {
+                "http://localhost:3000",     // Next.js, React (Create React App)
+                "http://localhost:3001",     // Next.js alternatif
+                "http://localhost:4200",     // Angular
+                "http://localhost:5173",     // Vite (React, Vue)
+                "http://localhost:8080"      // Vue CLI
+            };
+
         // WithOrigins() : Liste des domaines autoris�s
-        // Support pour plusieurs frameworks frontend sur diff�rents ports
-        policy.WithOrigins(
-                  "http://localhost:3000",     // Next.js, React (Create React App)
-                  "http://localhost:3001",     // Next.js alternatif
-                  "http://localhost:4200",     // Angular
-                  "http://localhost:5173",     // Vite (React, Vue)
-                  "http://localhost:8080"      // Vue CLI
-              )
+        // Support pour plusieurs frameworks frontend et production (Vercel)
+        policy.WithOrigins(allowedOrigins)
               // AllowAnyMethod() : Autorise GET, POST, PUT, DELETE, PATCH, etc.
               .AllowAnyMethod()
               // AllowAnyHeader() : Autorise tous les en-t�tes (Content-Type, Authorization, etc.)
