@@ -47,4 +47,21 @@ public interface IGeminiService
     /// <param name="monthsAhead">Nombre de mois à prédire</param>
     /// <returns>Prédictions de revenus et dépenses</returns>
     Task<string> PredictBudgetAsync(int monthsAhead);
+
+    /// <summary>
+    /// Analyse le patrimoine global et génère des insights stratégiques via l'IA
+    /// </summary>
+    /// <returns>Liste de 3 insights patrimoniaux personnalisés</returns>
+    /// <remarks>
+    /// Cette méthode :
+    /// 1. Récupère tous les assets et transactions
+    /// 2. Calcule les métriques patrimoniales :
+    ///    - Valeur totale et répartition par type
+    ///    - Revenus/dépenses mensuels moyens
+    ///    - Ratios clés (revenus/patrimoine, assets productifs)
+    /// 3. Construit un prompt structuré pour Gemini
+    /// 4. Génère 3 insights stratégiques via l'IA
+    /// 5. Retourne une liste de 3 phrases courtes (15-20 mots chacune)
+    /// </remarks>
+    Task<List<string>> GetPortfolioInsightsAsync();
 }

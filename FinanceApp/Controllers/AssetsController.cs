@@ -375,9 +375,9 @@ public class AssetsController : ControllerBase
             _logger.LogInformation("Calcul de la valeur totale du patrimoine");
 
             // SumAsync() : Calcule la somme directement en base de données
-            // SELECT SUM("Value") FROM "Assets"
+            // SELECT SUM("CurrentValue") FROM "Assets"
             // Performant : le calcul est fait par PostgreSQL, pas en C#
-            var totalValue = await _context.Assets.SumAsync(a => a.Value);
+            var totalValue = await _context.Assets.SumAsync(a => a.CurrentValue);
 
             _logger.LogInformation("Valeur totale du patrimoine : {TotalValue}€", totalValue);
 

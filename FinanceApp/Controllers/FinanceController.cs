@@ -482,6 +482,64 @@ public class FinanceController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// GET /api/finance/portfolio-insights
+    /// Analyse le patrimoine global et génère des insights stratégiques personnalisés
+    /// </summary>
+    /// <returns>3 insights patrimoniaux générés par l'IA</returns>
+    /// <remarks>
+    /// EXEMPLE DE REQUÊTE :
+    /// GET /api/finance/portfolio-insights
+    /// 
+    /// EXEMPLE DE RÉPONSE :
+    /// {
+    ///   "insights": [
+    ///     "Votre patrimoine est fortement concentré en immobilier (70%), ce qui limite la liquidité et la diversification.",
+    ///     "Vos revenus mensuels (3200 CAD) représentent seulement 0.7% de la valeur de vos actifs, un ratio faible.",
+    ///     "Seulement 20% de votre patrimoine est investi dans des actifs productifs (investissements)."
+    ///   ]
+    /// }
+    /// 
+    /// ALGORITHME :
+    /// 1. Récupère tous les assets et transactions
+    /// 2. Calcule :
+    ///    - Valeur totale et répartition par type
+    ///    - Revenus/dépenses mensuels moyens
+    ///    - Ratio revenus/patrimoine
+    ///    - % d'assets productifs
+    /// 3. Génère 3 insights via Gemini
+    /// 
+    /// UTILITÉ :
+    /// - Dashboard patrimonial
+    /// - Analyse de diversification
+    /// - Conseils stratégiques
+    /// - Suivi de la structure du patrimoine
+    /// </remarks>
+    [HttpGet("portfolio-insights")]
+    public async Task<ActionResult<object>> GetPortfolioInsights()
+    {
+        try
+        {
+            _logger.LogInformation("Demande d'insights patrimoniaux");
+
+            // Appel au service IA
+            var insights = await _geminiService.GetPortfolioInsightsAsync();
+
+            _logger.LogInformation("Insights générés : {Count} insight(s)", insights.Count);
+
+            return Ok(new { insights });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la génération d'insights patrimoniaux");
+            return StatusCode(500, new 
+            { 
+                error = "Impossible de générer des insights pour le moment.",
+                details = ex.Message 
+            });
+        }
+    }
 }
 
 /// <summary>

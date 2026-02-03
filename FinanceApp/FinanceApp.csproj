@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="..\.vscode\tasks.json" Link="tasks.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Google.Cloud.AIPlatform.V1" Version="3.60.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

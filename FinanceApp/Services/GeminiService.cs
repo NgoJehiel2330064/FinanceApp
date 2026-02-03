@@ -824,5 +824,296 @@ Inclus une estimation chiffrée des économies potentielles.";
         }
     }
 
+    /// <inheritdoc />
+    public async Task<List<string>> GetPortfolioInsightsAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Génération d'insights patrimoniaux");
+
+            // ================================================================
+            // RÉCUPÉRATION DES DONNÉES (Assets + Transactions)
+            // ================================================================
+            var assets = await _context.Assets.ToListAsync();
+            var transactions = await _context.Transactions.ToListAsync();
+
+            if (!assets.Any())
+            {
+                return new List<string> 
+                { 
+                    "Aucun asset enregistré. Commencez par ajouter vos biens pour une analyse patrimoniale complète." 
+                };
+            }
+
+            // ================================================================
+            // CALCUL DES MÉTRIQUES PATRIMONIALES
+            // ================================================================
+            
+            // 1. Valeur totale du patrimoine
+            var totalAssetValue = assets.Sum(a => a.CurrentValue);
+
+            // 2. Répartition par type d'asset
+            var assetsByType = assets
+                .GroupBy(a => a.Type)
+                .Select(g => new
+                {
+                    Type = g.Key.ToString(),
+                    TotalValue = g.Sum(a => a.CurrentValue),
+                    Percentage = (g.Sum(a => a.CurrentValue) / totalAssetValue) * 100,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.TotalValue)
+                .ToList();
+
+            // 3. Calcul des flux financiers (3 derniers mois)
+            var threeMonthsAgo = DateTime.Now.AddMonths(-3);
+            var recentTransactions = transactions
+                .Where(t => t.Date >= threeMonthsAgo)
+                .ToList();
+
+            decimal avgMonthlyRevenue = 0;
+            decimal avgMonthlyExpenses = 0;
+            decimal avgMonthlySavings = 0;
+
+            if (recentTransactions.Any())
+            {
+                var monthlyRevenues = recentTransactions
+                    .Where(t => t.Type == TransactionType.Income)
+                    .GroupBy(t => new { t.Date.Year, t.Date.Month })
+                    .Select(g => g.Sum(t => t.Amount));
+
+                var monthlyExpenses = recentTransactions
+                    .Where(t => t.Type == TransactionType.Expense)
+                    .GroupBy(t => new { t.Date.Year, t.Date.Month })
+                    .Select(g => g.Sum(t => t.Amount));
+
+                avgMonthlyRevenue = monthlyRevenues.Any() ? monthlyRevenues.Average() : 0;
+                avgMonthlyExpenses = monthlyExpenses.Any() ? monthlyExpenses.Average() : 0;
+                avgMonthlySavings = avgMonthlyRevenue - avgMonthlyExpenses;
+            }
+
+            // 4. Calcul des ratios clés
+            var revenueToAssetRatio = totalAssetValue > 0 
+                ? (avgMonthlyRevenue / totalAssetValue) * 100 
+                : 0;
+
+            // 5. Heuristique des assets productifs
+            // Investment = productif, autres = moins productifs
+            var productiveAssets = assets.Where(a => a.Type == AssetType.Investment).Sum(a => a.CurrentValue);
+            var productiveRatio = totalAssetValue > 0 
+                ? (productiveAssets / totalAssetValue) * 100 
+                : 0;
+
+            // 6. Taux d'épargne
+            var savingsRate = avgMonthlyRevenue > 0 
+                ? (avgMonthlySavings / avgMonthlyRevenue) * 100 
+                : 0;
+
+            // ================================================================
+            // CONSTRUCTION DU PROMPT STRUCTURÉ POUR GEMINI
+            // ================================================================
+            var assetBreakdown = string.Join("\n", assetsByType.Select(a => 
+                $"  - {a.Type} : {a.Percentage:F1}% ({a.TotalValue:F2} CAD, {a.Count} actif(s))"
+            ));
+
+            var prompt = $@"Tu es un conseiller patrimonial expert. Analyse le patrimoine suivant et fournis EXACTEMENT 3 insights stratégiques courts.
+
+DONNÉES PATRIMONIALES :
+???????????????????????
+Valeur Totale : {totalAssetValue:F2} CAD
+Nombre d'actifs : {assets.Count}
+
+Répartition par Type :
+{assetBreakdown}
+
+DONNÉES DE FLUX (3 derniers mois) :
+???????????????????????
+Revenus mensuels moyens : {avgMonthlyRevenue:F2} CAD
+Dépenses mensuelles moyennes : {avgMonthlyExpenses:F2} CAD
+Épargne mensuelle moyenne : {avgMonthlySavings:F2} CAD
+
+RATIOS CLÉS :
+???????????????????????
+Ratio revenus / patrimoine : {revenueToAssetRatio:F2}% par mois
+Assets productifs (Investissements) : {productiveRatio:F1}% du total
+Taux d'épargne : {savingsRate:F1}%
+
+RÈGLES DE GÉNÉRATION :
+???????????????????????
+1. Génère EXACTEMENT 3 insights (pas plus, pas moins)
+2. Chaque insight : 15-20 mots maximum
+3. Ton professionnel et factuel
+4. Pas de recommandations d'investissement risquées
+5. Focus sur la structure du patrimoine et les flux
+6. Utilise des chiffres concrets
+
+FORMAT DE RÉPONSE (STRICT) :
+???????????????????????
+Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
+1. [Premier insight sur la structure du patrimoine]
+2. [Deuxième insight sur les flux et ratios]
+3. [Troisième insight stratégique ou recommandation]";
+
+            _logger.LogDebug("Prompt portfolio insights : {Prompt}", prompt);
+
+            // ================================================================
+            // RÉCUPÉRATION DE LA CLÉ API
+            // ================================================================
+            var apiKey = _configuration.GetSection("Gemini")["ApiKey"];
+
+            if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
+            {
+                _logger.LogWarning("Clé API Gemini non configurée - Génération d'insights basiques");
+                
+                // Fallback sans IA : insights basiques
+                var fallbackInsights = new List<string>();
+
+                // Insight 1 : Concentration
+                var dominantType = assetsByType.FirstOrDefault();
+                if (dominantType != null && dominantType.Percentage > 60)
+                {
+                    fallbackInsights.Add(
+                        $"Votre patrimoine est fortement concentré en {dominantType.Type} ({dominantType.Percentage:F0}%), ce qui limite la diversification."
+                    );
+                }
+                else
+                {
+                    fallbackInsights.Add("Votre patrimoine est diversifié entre plusieurs types d'actifs.");
+                }
+
+                // Insight 2 : Ratio revenus/patrimoine
+                if (revenueToAssetRatio < 0.5m)
+                {
+                    fallbackInsights.Add(
+                        $"Vos revenus mensuels ({avgMonthlyRevenue:F0} CAD) sont faibles par rapport à votre patrimoine ({totalAssetValue:F0} CAD)."
+                    );
+                }
+                else
+                {
+                    fallbackInsights.Add(
+                        $"Vos revenus mensuels ({avgMonthlyRevenue:F0} CAD) sont proportionnés à votre patrimoine."
+                    );
+                }
+
+                // Insight 3 : Assets productifs
+                if (productiveRatio < 20)
+                {
+                    fallbackInsights.Add(
+                        $"Seulement {productiveRatio:F0}% de vos actifs sont des investissements productifs."
+                    );
+                }
+                else
+                {
+                    fallbackInsights.Add(
+                        $"Environ {productiveRatio:F0}% de votre patrimoine est investi dans des actifs productifs."
+                    );
+                }
+
+                return fallbackInsights;
+            }
+
+            // ================================================================
+            // APPEL À GEMINI
+            // ================================================================
+            var model = _configuration.GetSection("Gemini")["Model"] ?? "gemini-1.5-flash";
+            var url = $"{GEMINI_API_BASE_URL}/models/{model}:generateContent?key={apiKey}";
+
+            var requestBody = new
+            {
+                contents = new[]
+                {
+                    new
+                    {
+                        parts = new[]
+                        {
+                            new { text = prompt }
+                        }
+                    }
+                },
+                generationConfig = new
+                {
+                    temperature = 0.4f,      // Équilibré entre créativité et cohérence
+                    maxOutputTokens = 120    // 3 insights x ~40 tokens
+                }
+            };
+
+            var jsonContent = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync(url, content);
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            using var jsonDoc = JsonDocument.Parse(responseContent);
+            
+            var generatedText = jsonDoc.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString()
+                ?.Trim();
+
+            // ================================================================
+            // PARSING DE LA RÉPONSE (EXTRACTION DES 3 INSIGHTS)
+            // ================================================================
+            var insights = new List<string>();
+
+            if (!string.IsNullOrEmpty(generatedText))
+            {
+                // Parse les lignes numérotées (1. 2. 3.)
+                var lines = generatedText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                
+                foreach (var line in lines)
+                {
+                    var trimmedLine = line.Trim();
+                    
+                    // Accepter les formats : "1. texte", "1) texte", "- texte"
+                    if (System.Text.RegularExpressions.Regex.IsMatch(trimmedLine, @"^[0-9]+[\.\)]\s+.*") ||
+                        trimmedLine.StartsWith("- "))
+                    {
+                        // Nettoyer le numéro/marqueur au début
+                        var cleanedInsight = System.Text.RegularExpressions.Regex.Replace(
+                            trimmedLine, 
+                            @"^[0-9]+[\.\)]\s+|-\s+", 
+                            ""
+                        ).Trim();
+
+                        if (!string.IsNullOrWhiteSpace(cleanedInsight))
+                        {
+                            insights.Add(cleanedInsight);
+                        }
+                    }
+                }
+
+                // Si moins de 3 insights parsés, ajouter le texte brut
+                if (insights.Count < 3)
+                {
+                    insights.Clear();
+                    insights.Add(generatedText);
+                }
+
+                // Limiter à 3 insights maximum
+                insights = insights.Take(3).ToList();
+            }
+
+            if (!insights.Any())
+            {
+                insights.Add("Impossible de générer des insights pour le moment.");
+            }
+
+            _logger.LogInformation("Insights générés : {Count} insight(s)", insights.Count);
+            return insights;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la génération d'insights patrimoniaux");
+            return new List<string> 
+            { 
+                "Impossible de générer des insights pour le moment. Vérifiez votre configuration." 
+            };
+        }
+    }
+
     #endregion
 }

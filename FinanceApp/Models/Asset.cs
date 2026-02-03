@@ -4,18 +4,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace FinanceApp.Models;
 
 /// <summary>
-/// Entité Asset : Représente un actif dans le patrimoine (bien, investissement, compte bancaire)
+/// Entitï¿½ Asset : Reprï¿½sente un actif dans le patrimoine (bien, investissement, compte bancaire)
 /// </summary>
 /// <remarks>
-/// Cette classe permet de suivre l'évolution du patrimoine :
-/// - Comptes bancaires (courant, épargne)
+/// Cette classe permet de suivre l'ï¿½volution du patrimoine :
+/// - Comptes bancaires (courant, ï¿½pargne)
 /// - Investissements (actions, crypto, immobilier)
 /// - Biens physiques (voiture, maison)
 /// </remarks>
 public class Asset
 {
     /// <summary>
-    /// Clé primaire : identifiant unique de l'actif
+    /// Clï¿½ primaire : identifiant unique de l'actif
     /// </summary>
     [Key]
     public int Id { get; set; }
@@ -28,10 +28,10 @@ public class Asset
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Type d'actif pour la catégorisation
+    /// Type d'actif pour la catï¿½gorisation
     /// </summary>
     /// <remarks>
-    /// Utilise un enum pour garantir des valeurs cohérentes
+    /// Utilise un enum pour garantir des valeurs cohï¿½rentes
     /// Facilite les rapports et statistiques par type d'actif
     /// </remarks>
     [Required]
@@ -41,8 +41,8 @@ public class Asset
     /// Valeur actuelle de l'actif
     /// </summary>
     /// <remarks>
-    /// decimal(18,2) : Précision suffisante pour des gros montants
-    /// Ex: maison à 500,000.00€, compte à 15,432.50€
+    /// decimal(18,2) : Prï¿½cision suffisante pour des gros montants
+    /// Ex: maison ï¿½ 500,000.00ï¿½, compte ï¿½ 15,432.50ï¿½
     /// </remarks>
     [Required]
     [Column(TypeName = "decimal(18,2)")]
@@ -54,7 +54,7 @@ public class Asset
     /// <remarks>
     /// Permet de calculer la plus-value ou moins-value
     /// Gain/Perte = CurrentValue - PurchaseValue
-    /// Nullable (?) car certains actifs n'ont pas de valeur d'achat (héritage, cadeau)
+    /// Nullable (?) car certains actifs n'ont pas de valeur d'achat (hï¿½ritage, cadeau)
     /// </remarks>
     [Column(TypeName = "decimal(18,2)")]
     public decimal? PurchaseValue { get; set; }
@@ -63,8 +63,8 @@ public class Asset
     /// Date d'acquisition de l'actif (optionnelle)
     /// </summary>
     /// <remarks>
-    /// Utile pour calculer la durée de détention
-    /// Important pour la fiscalité (certains gains sont exonérés après X années)
+    /// Utile pour calculer la durï¿½e de dï¿½tention
+    /// Important pour la fiscalitï¿½ (certains gains sont exonï¿½rï¿½s aprï¿½s X annï¿½es)
     /// </remarks>
     public DateTime? PurchaseDate { get; set; }
 
@@ -72,13 +72,13 @@ public class Asset
     /// Devise de l'actif (EUR, USD, BTC, etc.)
     /// </summary>
     /// <remarks>
-    /// Important pour les actifs en devises étrangères ou crypto-monnaies
-    /// Permet de gérer un patrimoine multi-devises
+    /// Important pour les actifs en devises ï¿½trangï¿½res ou crypto-monnaies
+    /// Permet de gï¿½rer un patrimoine multi-devises
     /// MaxLength(10) car les codes devises sont courts (USD, EUR, BTC, ETH)
     /// </remarks>
     [Required]
     [MaxLength(10)]
-    public string Currency { get; set; } = "EUR";
+    public string Currency { get; set; } = "CAD";
 
     /// <summary>
     /// Description ou notes sur l'actif
@@ -90,23 +90,23 @@ public class Asset
     /// Indique si l'actif est liquide (facilement convertible en cash)
     /// </summary>
     /// <remarks>
-    /// true : actifs liquides (compte bancaire, actions cotées)
+    /// true : actifs liquides (compte bancaire, actions cotï¿½es)
     /// false : actifs non liquides (immobilier, objets de collection)
-    /// Utile pour calculer la liquidité totale du patrimoine
+    /// Utile pour calculer la liquiditï¿½ totale du patrimoine
     /// </remarks>
     public bool IsLiquid { get; set; } = true;
 
     /// <summary>
-    /// Date de dernière mise à jour de la valeur
+    /// Date de derniï¿½re mise ï¿½ jour de la valeur
     /// </summary>
     /// <remarks>
     /// Important car la valeur des actifs change (actions, crypto, immobilier)
-    /// Permet de savoir si la valeur est à jour
+    /// Permet de savoir si la valeur est ï¿½ jour
     /// </remarks>
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Date de création de l'enregistrement
+    /// Date de crï¿½ation de l'enregistrement
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
@@ -115,13 +115,13 @@ public class Asset
 /// Types d'actifs possibles
 /// </summary>
 /// <remarks>
-/// Catégorisation standard pour l'analyse patrimoniale
-/// Facilite les rapports et graphiques par catégorie d'actif
+/// Catï¿½gorisation standard pour l'analyse patrimoniale
+/// Facilite les rapports et graphiques par catï¿½gorie d'actif
 /// </remarks>
 public enum AssetType
 {
     /// <summary>
-    /// Compte bancaire (courant, épargne)
+    /// Compte bancaire (courant, ï¿½pargne)
     /// </summary>
     BankAccount = 0,
 
@@ -131,7 +131,7 @@ public enum AssetType
     Investment = 1,
 
     /// <summary>
-    /// Immobilier (résidence principale, investissement locatif)
+    /// Immobilier (rï¿½sidence principale, investissement locatif)
     /// </summary>
     RealEstate = 2,
 
@@ -141,7 +141,7 @@ public enum AssetType
     Cryptocurrency = 3,
 
     /// <summary>
-    /// Véhicules (voiture, moto, bateau)
+    /// Vï¿½hicules (voiture, moto, bateau)
     /// </summary>
     Vehicle = 4,
 

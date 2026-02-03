@@ -4,21 +4,21 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace FinanceApp.Models;
 
 /// <summary>
-/// Entité Transaction : Représente une transaction financière (revenu ou dépense)
+/// Entitï¿½ Transaction : Reprï¿½sente une transaction financiï¿½re (revenu ou dï¿½pense)
 /// </summary>
 /// <remarks>
-/// Cette classe est un "modèle" ou "entité" EF Core.
-/// EF Core va automatiquement créer une table "Transactions" dans PostgreSQL
-/// avec des colonnes correspondant à chaque propriété.
+/// Cette classe est un "modï¿½le" ou "entitï¿½" EF Core.
+/// EF Core va automatiquement crï¿½er une table "Transactions" dans PostgreSQL
+/// avec des colonnes correspondant ï¿½ chaque propriï¿½tï¿½.
 /// </remarks>
 public class Transaction
 {
     /// <summary>
-    /// Clé primaire : identifiant unique de la transaction
+    /// Clï¿½ primaire : identifiant unique de la transaction
     /// </summary>
     /// <remarks>
-    /// [Key] : Indique explicitement que c'est la clé primaire (optionnel si la propriété s'appelle "Id")
-    /// EF Core va configurer cette colonne comme SERIAL (auto-incrémentée) dans PostgreSQL
+    /// [Key] : Indique explicitement que c'est la clï¿½ primaire (optionnel si la propriï¿½tï¿½ s'appelle "Id")
+    /// EF Core va configurer cette colonne comme SERIAL (auto-incrï¿½mentï¿½e) dans PostgreSQL
     /// </remarks>
     [Key]
     public int Id { get; set; }
@@ -27,8 +27,8 @@ public class Transaction
     /// Date et heure de la transaction
     /// </summary>
     /// <remarks>
-    /// [Required] : Rend cette propriété obligatoire (NOT NULL dans la base de données)
-    /// DateTime sera stocké comme TIMESTAMP dans PostgreSQL
+    /// [Required] : Rend cette propriï¿½tï¿½ obligatoire (NOT NULL dans la base de donnï¿½es)
+    /// DateTime sera stockï¿½ comme TIMESTAMP dans PostgreSQL
     /// </remarks>
     [Required]
     public DateTime Date { get; set; }
@@ -37,10 +37,10 @@ public class Transaction
     /// Montant de la transaction
     /// </summary>
     /// <remarks>
-    /// [Column(TypeName = "decimal(18,2)")] : Spécifie le type exact dans la base de données
-    /// - decimal(18,2) signifie : 18 chiffres au total, dont 2 après la virgule
+    /// [Column(TypeName = "decimal(18,2)")] : Spï¿½cifie le type exact dans la base de donnï¿½es
+    /// - decimal(18,2) signifie : 18 chiffres au total, dont 2 aprï¿½s la virgule
     /// - Parfait pour les montants financiers (ex: 1234567890123456.78)
-    /// - Plus précis que "double" ou "float" qui ont des problèmes d'arrondi
+    /// - Plus prï¿½cis que "double" ou "float" qui ont des problï¿½mes d'arrondi
     /// </remarks>
     [Required]
     [Column(TypeName = "decimal(18,2)")]
@@ -50,39 +50,39 @@ public class Transaction
     /// Description de la transaction
     /// </summary>
     /// <remarks>
-    /// [MaxLength(500)] : Limite la longueur à 500 caractères (VARCHAR(500) dans PostgreSQL)
-    /// Sans MaxLength, ce serait TEXT (illimité mais moins performant pour les index)
+    /// [MaxLength(500)] : Limite la longueur ï¿½ 500 caractï¿½res (VARCHAR(500) dans PostgreSQL)
+    /// Sans MaxLength, ce serait TEXT (illimitï¿½ mais moins performant pour les index)
     /// </remarks>
     [Required]
     [MaxLength(500)]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Catégorie de la transaction (ex: Alimentation, Transport, Salaire, etc.)
+    /// Catï¿½gorie de la transaction (ex: Alimentation, Transport, Salaire, etc.)
     /// </summary>
     /// <remarks>
-    /// [MaxLength(100)] : Catégories courtes donc 100 caractères suffisent
-    /// Permet de grouper et filtrer les transactions par catégorie
+    /// [MaxLength(100)] : Catï¿½gories courtes donc 100 caractï¿½res suffisent
+    /// Permet de grouper et filtrer les transactions par catï¿½gorie
     /// </remarks>
     [Required]
     [MaxLength(100)]
     public string Category { get; set; } = string.Empty;
 
     /// <summary>
-    /// Type de transaction : Revenu ou Dépense
+    /// Type de transaction : Revenu ou Dï¿½pense
     /// </summary>
     /// <remarks>
-    /// Utilise un enum pour limiter les valeurs possibles (sécurité et cohérence)
-    /// Stocké comme INTEGER dans PostgreSQL (0 = Income, 1 = Expense)
+    /// Utilise un enum pour limiter les valeurs possibles (sï¿½curitï¿½ et cohï¿½rence)
+    /// Stockï¿½ comme INTEGER dans PostgreSQL (0 = Income, 1 = Expense)
     /// </remarks>
     [Required]
     public TransactionType Type { get; set; }
 
     /// <summary>
-    /// Date de création de l'enregistrement (métadonnée)
+    /// Date de crï¿½ation de l'enregistrement (mï¿½tadonnï¿½e)
     /// </summary>
     /// <remarks>
-    /// Bonne pratique : tracer quand les données ont été créées
+    /// Bonne pratique : tracer quand les donnï¿½es ont ï¿½tï¿½ crï¿½ï¿½es
     /// Utile pour l'audit et le debugging
     /// </remarks>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -92,21 +92,21 @@ public class Transaction
 /// Enum pour le type de transaction
 /// </summary>
 /// <remarks>
-/// Enum = type énuméré avec des valeurs fixes
+/// Enum = type ï¿½numï¿½rï¿½ avec des valeurs fixes
 /// Avantages :
 /// 1. Type-safe : impossible d'avoir une valeur invalide
-/// 2. IntelliSense : auto-complétion dans l'IDE
+/// 2. IntelliSense : auto-complï¿½tion dans l'IDE
 /// 3. Stockage efficace : INTEGER au lieu de VARCHAR
 /// </remarks>
 public enum TransactionType
 {
     /// <summary>
-    /// Revenu (argent entrant)
+    /// DÃ©pense (argent sortant)
     /// </summary>
-    Income = 0,
+    Expense = 0,
 
     /// <summary>
-    /// Dépense (argent sortant)
+    /// Revenu (argent entrant)
     /// </summary>
-    Expense = 1
+    Income = 1
 }
