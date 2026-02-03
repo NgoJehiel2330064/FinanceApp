@@ -13,5 +13,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 EXPOSE 5153
-ENV ASPNETCORE_URLS=http://+:5153
+ENV PORT=5153
+ENV ASPNETCORE_URLS=http://+:${PORT}
 ENTRYPOINT ["dotnet", "FinanceApp.dll"]

@@ -1,86 +1,48 @@
-# Guide de déploiement pour rendre l'application accessible partout
+﻿# Guide de déploiement (résumé)
 
-## Option 1 : Déploiement Cloud (Recommandé) 🌐
+## 1) Backend sur Railway
 
-### Frontend sur Vercel (Gratuit)
-1. Créez un compte sur https://vercel.com
-2. Installez Vercel CLI :
-   ```powershell
-   npm install -g vercel
-   ```
-3. Dans le dossier finance-ui :
-   ```powershell
-   cd finance-ui
-   vercel login
-   vercel
-   ```
-4. Suivez les instructions (appuyez sur Entrée pour accepter les valeurs par défaut)
-5. Vercel vous donnera une URL publique (ex: https://finance-app-xyz.vercel.app)
+1. Créez un projet Railway et importez le repo GitHub
+2. Ajoutez PostgreSQL
+3. Ajoutez les variables d'environnement :
 
-### Backend sur Railway (Gratuit)
-1. Créez un compte sur https://railway.app
-2. Cliquez sur "New Project" → "Deploy from GitHub repo"
-3. Connectez votre repo GitHub (ou créez-en un)
-4. Railway détectera automatiquement le Dockerfile
-5. Ajoutez une base de données PostgreSQL dans Railway
-6. Configurez les variables d'environnement :
-   - `ConnectionStrings__DefaultConnection` = (fournie par Railway)
-   - `JwtSettings__SecretKey` = (copiez depuis appsettings.json)
-7. Railway vous donnera une URL publique (ex: https://financeapp-production.up.railway.app)
-
-### Mise à jour de la configuration
-Une fois déployé, mettez à jour le .env.local avec l'URL Railway :
 ```
-NEXT_PUBLIC_API_URL=https://votre-app-railway.up.railway.app
+ConnectionStrings__DefaultConnection = ${Postgres.DATABASE_URL}
+Jwt__Key = <CHANGE_ME>
+Jwt__Issuer = FinanceApp
+Jwt__Audience = FinanceAppUsers
+Jwt__ExpiresMinutes = 60
+ASPNETCORE_ENVIRONMENT = Production
+Groq__ApiKey = <CHANGE_ME>
+Groq__Model = mixtral-8x7b-32768
+Groq__BaseUrl = https://api.groq.com/openai/v1
+Groq__Temperature = 0.3
+Groq__MaxTokens = 150
 ```
 
-## Option 2 : ngrok (Solution temporaire rapide) 🚀
+4. Déployez et notez l'URL Railway
+5. Vérifiez : `https://VOTRE-URL-RAILWAY/health`
 
-### Installation
-1. Téléchargez ngrok : https://ngrok.com/download
-2. Créez un compte gratuit sur ngrok.com
-3. Installez ngrok
+## 2) Frontend sur Vercel
 
-### Utilisation
-Dans deux terminaux séparés :
+1. Importez le repo
+2. Root Directory : `finance-ui`
+3. Ajoutez la variable :
 
-**Terminal 1 - Tunnel Backend :**
-```powershell
-ngrok http 5153
 ```
-Notez l'URL (ex: https://abc123.ngrok.io)
-
-**Terminal 2 - Tunnel Frontend :**
-```powershell
-ngrok http 3000
+NEXT_PUBLIC_API_URL = https://VOTRE-URL-RAILWAY
 ```
-Notez l'URL (ex: https://def456.ngrok.io)
 
-Mettez à jour .env.local avec l'URL du backend ngrok.
+4. Déployez et notez l'URL Vercel
 
-**Avantages :** Très rapide à mettre en place
-**Inconvénients :** Les URLs changent à chaque redémarrage, nécessite que votre PC reste allumé
+## 3) CORS
 
-## Option 3 : Hébergement sur serveur personnel
+Ajoutez sur Railway :
 
-Si vous avez un serveur ou un Raspberry Pi :
-1. Configurez un nom de domaine
-2. Configurez le port forwarding sur votre routeur (ports 80, 443)
-3. Utilisez Nginx comme reverse proxy
-4. Configurez SSL avec Let's Encrypt
+```
+AllowedOrigins__0 = https://VOTRE-URL-VERCEL
+```
 
-## Recommandation 🎯
+## 4) Partage
 
-**Pour partager avec des amis de façon permanente :**
-- Utilisez **Vercel (frontend)** + **Railway (backend)**
-- C'est gratuit et disponible 24/7
-- Les URLs ne changent jamais
-- Configuration en 10 minutes
-
-**Pour tester rapidement (1-2 heures) :**
-- Utilisez **ngrok**
-- Votre PC doit rester allumé
-
-## Prochaines étapes
-
-Dites-moi quelle option vous préférez et je vous guiderai dans le déploiement !
+Partagez l'URL Vercel : utilisable sur mobile, ordinateur et tablette.
