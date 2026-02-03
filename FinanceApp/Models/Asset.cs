@@ -53,6 +53,9 @@ public class Asset
     /// <remarks>
     /// decimal(18,2) : Pr�cision suffisante pour des gros montants
     /// Ex: maison � 500,000.00�, compte � 15,432.50�
+    /// 
+    /// Pour les comptes bancaires (BankAccount), cette valeur représente
+    /// le solde actuel qui est automatiquement synchronisé avec les transactions.
     /// </remarks>
     [Required]
     [Column(TypeName = "decimal(18,2)")]

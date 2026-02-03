@@ -115,6 +115,7 @@ builder.Services.AddHttpClient();
 // 5. Prochaine requ�te : nouvelles instances fra�ches
 builder.Services.AddScoped<IGeminiService, GroqAIService>();
 builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
+builder.Services.AddScoped<INetWorthService, NetWorthService>();
 
 // ----------------------------------------------------------------------------
 // AUTHENTIFICATION JWT

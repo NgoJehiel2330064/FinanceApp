@@ -33,6 +33,9 @@ public class TransactionsController : ControllerBase
     // IGeminiService : Pour utiliser l'IA (sugg�rer cat�gories, etc.)
     private readonly IGeminiService _geminiService;
     
+    // INetWorthService : Pour synchroniser transactions → patrimoine
+    private readonly INetWorthService _netWorthService;
+    
     // ILogger : Pour tracer les op�rations et erreurs
     private readonly ILogger<TransactionsController> _logger;
 
@@ -63,10 +66,12 @@ public class TransactionsController : ControllerBase
     public TransactionsController(
         ApplicationDbContext context,
         IGeminiService geminiService,
+        INetWorthService netWorthService,
         ILogger<TransactionsController> logger)
     {
         _context = context;
         _geminiService = geminiService;
+        _netWorthService = netWorthService;
         _logger = logger;
     }
 
