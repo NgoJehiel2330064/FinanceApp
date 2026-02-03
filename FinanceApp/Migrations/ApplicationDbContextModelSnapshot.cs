@@ -67,6 +67,9 @@ namespace FinanceApp.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Currency")
@@ -76,6 +79,70 @@ namespace FinanceApp.Migrations
                         .HasDatabaseName("IX_Assets_Type");
 
                     b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("FinanceApp.Models.Liability", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("CreditLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<decimal>("CurrentBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal?>("InterestRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("MaturityDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("MonthlyPayment")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Type")
+                        .HasDatabaseName("IX_Liabilities_Type");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_Liabilities_UserId");
+
+                    b.ToTable("Liabilities");
                 });
 
             modelBuilder.Entity("FinanceApp.Models.Transaction", b =>
@@ -106,7 +173,19 @@ namespace FinanceApp.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<int?>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SourceAssetId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SourceLiabilityId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -116,6 +195,15 @@ namespace FinanceApp.Migrations
 
                     b.HasIndex("Date")
                         .HasDatabaseName("IX_Transactions_Date");
+
+                    b.HasIndex("PaymentMethod")
+                        .HasDatabaseName("IX_Transactions_PaymentMethod");
+
+                    b.HasIndex("SourceAssetId")
+                        .HasDatabaseName("IX_Transactions_SourceAssetId");
+
+                    b.HasIndex("SourceLiabilityId")
+                        .HasDatabaseName("IX_Transactions_SourceLiabilityId");
 
                     b.HasIndex("Type", "Date")
                         .HasDatabaseName("IX_Transactions_Type_Date");

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authService } from '@/lib/auth-service';
+import { setUserCookie } from '@/lib/cookie-utils';
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -40,9 +41,11 @@ export default function ConnexionPage() {
 
       if (response.success) {
         console.log('Connexion réussie:', response.user);
-        // Sauvegarder les informations utilisateur (localStorage ou contexte)
-        if (response.user) {
-          localStorage.setItem('user', JSON.stringify(response.user));
+        // Sauvegarder les informations utilisateur avec cookie
+        if (response.user && response.token) {
+          setUserCookie(response.user, response.token);
+        } else if (response.user) {
+          setUserCookie(response.user);
         }
         // Redirection vers la page d'accueil
         router.push('/');

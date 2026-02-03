@@ -8,11 +8,11 @@ using System.Text.Json;
 namespace FinanceApp.Services;
 
 /// <summary>
-/// Implémentation du service d'intégration avec l'IA Gemini
+/// ImplÃ©mentation du service d'intÃ©gration avec l'IA Gemini
 /// </summary>
 /// <remarks>
-/// Ce service utilise l'API REST de Google Gemini pour générer des conseils financiers
-/// basés sur l'analyse des transactions de l'utilisateur
+/// Ce service utilise l'API REST de Google Gemini pour gÃ©nÃ©rer des conseils financiers
+/// basÃ©s sur l'analyse des transactions de l'utilisateur
 /// </remarks>
 public class GeminiService : IGeminiService
 {
@@ -25,19 +25,19 @@ public class GeminiService : IGeminiService
     private const string GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
     /// <summary>
-    /// Constructeur avec injection de dépendances
+    /// Constructeur avec injection de dÃ©pendances
     /// </summary>
     /// <remarks>
-    /// INJECTION DE DÉPENDANCES :
+    /// INJECTION DE DÃ‰PENDANCES :
     /// - ILogger : Pour tracer les appels API et erreurs
-    /// - IConfiguration : Pour lire la clé API depuis appsettings.json
-    /// - ApplicationDbContext : Pour accéder aux transactions en base de données
+    /// - IConfiguration : Pour lire la clÃ© API depuis appsettings.json
+    /// - ApplicationDbContext : Pour accÃ©der aux transactions en base de donnÃ©es
     /// - HttpClient : Pour faire les appels HTTP vers l'API Gemini
     /// 
-    /// HttpClient est injecté pour profiter du HttpClientFactory qui :
-    /// - Gère le pool de connexions (réutilisation des sockets)
-    /// - Évite l'épuisement des ports (socket exhaustion)
-    /// - Gère automatiquement les DNS refresh
+    /// HttpClient est injectÃ© pour profiter du HttpClientFactory qui :
+    /// - GÃ¨re le pool de connexions (rÃ©utilisation des sockets)
+    /// - Ã‰vite l'Ã©puisement des ports (socket exhaustion)
+    /// - GÃ¨re automatiquement les DNS refresh
     /// </remarks>
     public GeminiService(
         ILogger<GeminiService> logger, 
@@ -52,56 +52,59 @@ public class GeminiService : IGeminiService
     }
 
     /// <summary>
-    /// Génère un conseil financier basé sur l'analyse de toutes les transactions
+    /// GÃ©nÃ¨re un conseil financier basÃ© sur l'analyse de toutes les transactions de l'utilisateur
     /// </summary>
+    /// <param name="userId">ID de l'utilisateur dont analyser les transactions</param>
     /// <returns>Conseil financier court (15 mots maximum)</returns>
     /// <remarks>
-    /// FLUX DE DONNÉES :
-    /// 1. Récupère les transactions depuis PostgreSQL via EF Core
-    /// 2. Analyse les données (calcul revenus, dépenses, catégories)
-    /// 3. Construit un prompt pour Gemini avec un résumé
+    /// FLUX DE DONNÃ‰ES :
+    /// 1. RÃ©cupÃ¨re les transactions de l'utilisateur depuis PostgreSQL via EF Core
+    /// 2. Analyse les donnÃ©es (calcul revenus, dÃ©penses, catÃ©gories)
+    /// 3. Construit un prompt pour Gemini avec un rÃ©sumÃ©
     /// 4. Appelle l'API Gemini via HTTP POST
-    /// 5. Parse la réponse JSON
-    /// 6. Retourne le conseil généré par l'IA
+    /// 5. Parse la rÃ©ponse JSON
+    /// 6. Retourne le conseil gÃ©nÃ©rÃ© par l'IA
     /// 
     /// GESTION D'ERREURS :
-    /// - Si pas de transactions : retourne un message par défaut
+    /// - Si pas de transactions : retourne un message par dÃ©faut
     /// - Si erreur API : log l'erreur et retourne un message de fallback
-    /// - Si clé API manquante : retourne un message d'information
+    /// - Si clÃ© API manquante : retourne un message d'information
     /// </remarks>
-    public async Task<string> GetFinancialAdvice()
+    public async Task<string> GetFinancialAdvice(int userId)
     {
         try
         {
-            _logger.LogInformation("Début de la génération du conseil financier");
+            _logger.LogInformation("DÃ©but de la gÃ©nÃ©ration du conseil financier pour userId={UserId}", userId);
 
             // ================================================================
-            // ÉTAPE 1 : RÉCUPÉRATION DES TRANSACTIONS DEPUIS POSTGRESQL
+            // Ã‰TAPE 1 : RÃ‰CUPÃ‰RATION DES TRANSACTIONS DEPUIS POSTGRESQL
             // ================================================================
-            // ToListAsync() : Requête asynchrone qui génère le SQL :
-            // SELECT * FROM "Transactions"
+            // ToListAsync() : RequÃªte asynchrone qui gÃ©nÃ¨re le SQL :
+            // SELECT * FROM "Transactions" WHERE "UserId" = {userId}
             // 
             // FLUX :
-            // EF Core ? Npgsql ? TCP/IP ? Docker ? PostgreSQL Container
-            // PostgreSQL exécute la requête et retourne les lignes
-            // Docker ? TCP/IP ? Npgsql ? EF Core ? List<Transaction>
-            var transactions = await _context.Transactions.ToListAsync();
+            // EF Core â†’ Npgsql â†’ TCP/IP â†’ Docker â†’ PostgreSQL Container
+            // PostgreSQL exÃ©cute la requÃªte et retourne les lignes
+            // Docker â†’ TCP/IP â†’ Npgsql â†’ EF Core â†’ List<Transaction>
+            var transactions = await _context.Transactions
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
 
             if (!transactions.Any())
             {
-                _logger.LogInformation("Aucune transaction trouvée");
-                return "Commencez à enregistrer vos transactions pour recevoir des conseils personnalisés.";
+                _logger.LogInformation("Aucune transaction trouvÃ©e pour userId={UserId}", userId);
+                return "Commencez Ã  enregistrer vos transactions pour recevoir des conseils personnalisÃ©s.";
             }
 
-            _logger.LogInformation("Récupération de {Count} transactions", transactions.Count);
+            _logger.LogInformation("RÃ©cupÃ©ration de {Count} transactions pour userId={UserId}", transactions.Count, userId);
 
             // ================================================================
-            // ÉTAPE 2 : ANALYSE DES DONNÉES
+            // Ã‰TAPE 2 : ANALYSE DES DONNÃ‰ES
             // ================================================================
-            // Calcul des métriques financières pour créer un résumé intelligent
+            // Calcul des mÃ©triques financiÃ¨res pour crÃ©er un rÃ©sumÃ© intelligent
             
             // Where() + Sum() : Filtre et additionne les montants
-            // C'est fait en mémoire (déjà chargé depuis la DB)
+            // C'est fait en mÃ©moire (dÃ©jÃ  chargÃ© depuis la DB)
             var totalRevenue = transactions
                 .Where(t => t.Type == TransactionType.Income)
                 .Sum(t => t.Amount);
@@ -112,9 +115,9 @@ public class GeminiService : IGeminiService
 
             var balance = totalRevenue - totalExpenses;
 
-            // GroupBy() : Regroupe par catégorie et calcule le total par catégorie
-            // OrderByDescending() : Trie pour avoir la catégorie avec le plus de dépenses
-            // FirstOrDefault() : Prend la première (celle avec le plus de dépenses)
+            // GroupBy() : Regroupe par catÃ©gorie et calcule le total par catÃ©gorie
+            // OrderByDescending() : Trie pour avoir la catÃ©gorie avec le plus de dÃ©penses
+            // FirstOrDefault() : Prend la premiÃ¨re (celle avec le plus de dÃ©penses)
             var topCategory = transactions
                 .Where(t => t.Type == TransactionType.Expense)
                 .GroupBy(t => t.Category)
@@ -123,71 +126,71 @@ public class GeminiService : IGeminiService
                 .FirstOrDefault();
 
             // ================================================================
-            // ÉTAPE 3 : CONSTRUCTION DU PROMPT POUR GEMINI
+            // Ã‰TAPE 3 : CONSTRUCTION DU PROMPT POUR GEMINI
             // ================================================================
-            // Le prompt est crucial : il guide l'IA pour générer une réponse pertinente
-            // On donne un contexte, des données, et des instructions précises
-            var prompt = $@"Tu es un conseiller financier expert. Analyse ces données et donne UN conseil court (15 mots maximum).
+            // Le prompt est crucial : il guide l'IA pour gÃ©nÃ©rer une rÃ©ponse pertinente
+            // On donne un contexte, des donnÃ©es, et des instructions prÃ©cises
+            var prompt = $@"Tu es un conseiller financier expert. Analyse ces donnÃ©es et donne UN conseil court (15 mots maximum).
 
-Données financières :
-- Revenus totaux : {totalRevenue:F2}€
-- Dépenses totales : {totalExpenses:F2}€
-- Balance : {balance:F2}€
-- Catégorie avec le plus de dépenses : {topCategory?.Category ?? "N/A"} ({topCategory?.Total:F2}€)
+DonnÃ©es financiÃ¨res :
+- Revenus totaux : {totalRevenue:F2}â‚¬
+- DÃ©penses totales : {totalExpenses:F2}â‚¬
+- Balance : {balance:F2}â‚¬
+- CatÃ©gorie avec le plus de dÃ©penses : {topCategory?.Category ?? "N/A"} ({topCategory?.Total:F2}â‚¬)
 - Nombre de transactions : {transactions.Count}
 
 Conseil (15 mots max) :";
 
-            _logger.LogInformation("Prompt créé : {Prompt}", prompt);
+            _logger.LogInformation("Prompt crÃ©Ã© pour userId={UserId}", userId);
 
             // ================================================================
-            // ÉTAPE 4 : RÉCUPÉRATION DE LA CLÉ API
+            // Ã‰TAPE 4 : RÃ‰CUPÃ‰RATION DE LA CLÃ‰ API
             // ================================================================
             // GetSection("Gemini") : Lit la section [Gemini] de appsettings.json
-            // ["ApiKey"] : Accède à la propriété "ApiKey"
+            // ["ApiKey"] : AccÃ¨de Ã  la propriÃ©tÃ© "ApiKey"
             var apiKey = _configuration.GetSection("Gemini")["ApiKey"];
 
             if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
             {
-                _logger.LogWarning("Clé API Gemini non configurée");
+                _logger.LogWarning("ClÃ© API Gemini non configurÃ©e");
                 
-                // En développement, on retourne un conseil simulé
+                // En dÃ©veloppement, on retourne un conseil simulÃ©
                 if (balance >= 0)
-                    return "Votre solde est positif, continuez à bien gérer votre budget !";
+                    return "Votre solde est positif, continuez Ã  bien gÃ©rer votre budget !";
                 else
-                    return "Attention, vos dépenses dépassent vos revenus. Analysez vos habitudes.";
+                    return "Attention, vos dÃ©penses dÃ©passent vos revenus. Analysez vos habitudes.";
             }
 
             // ================================================================
-            // ÉTAPE 5 : APPEL À L'API GEMINI
+            // Ã‰TAPE 5 : APPEL Ã€ L'API GEMINI
             // ================================================================
             var advice = await CallGeminiApiAsync(prompt, apiKey);
 
-            _logger.LogInformation("Conseil généré avec succès : {Advice}", advice);
+            _logger.LogInformation("Conseil gÃ©nÃ©rÃ© avec succÃ¨s pour userId={UserId} : {Advice}", userId, advice);
             return advice;
         }
         catch (Exception ex)
         {
             // En cas d'erreur, on log et on retourne un message de fallback
-            _logger.LogError(ex, "Erreur lors de la génération du conseil financier");
-            return "Impossible de générer un conseil pour le moment. Vérifiez votre configuration.";
+            _logger.LogError(ex, "Erreur lors de la gÃ©nÃ©ration du conseil financier pour userId={UserId}", userId);
+            return "Impossible de gÃ©nÃ©rer un conseil pour le moment. VÃ©rifiez votre configuration.";
         }
     }
 
     /// <summary>
-    /// Appelle l'API REST de Gemini pour générer du texte
+    /// Appelle l'API REST de Gemini pour gÃ©nÃ©rer du texte
     /// </summary>
-    /// <param name="prompt">Le prompt à envoyer à l'IA</param>
-    /// <param name="apiKey">Clé API Google</param>
-    /// <returns>Réponse générée par Gemini</returns>
+    /// <param name="prompt">Le prompt Ã  envoyer Ã  l'IA</param>
+    /// <param name="apiKey">ClÃ© API Google</param>
+    /// <returns>RÃ©ponse gÃ©nÃ©rÃ©e par Gemini</returns>
     /// <remarks>
     /// COMMUNICATION HTTP AVEC L'API GEMINI :
     /// 
-    /// 1. Construction de l'URL avec la clé API
-    /// 2. Création du payload JSON (corps de la requête)
-    /// 3. Envoi de la requête POST
-    /// 4. Réception de la réponse JSON
-    /// 5. Parsing et extraction du texte généré
+    /// 1. Construction de l'URL avec la clÃ© API
+    /// 2. CrÃ©ation du payload JSON (corps de la requÃªte)
+    /// 3. Envoi de la requÃªte POST
+    /// 4. RÃ©ception de la rÃ©ponse JSON
+    /// 5. Parsing et extraction du texte gÃ©nÃ©rÃ©
     /// 
     /// FORMAT DE L'API GEMINI :
     /// POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}
@@ -210,7 +213,7 @@ Conseil (15 mots max) :";
     ///   "candidates": [{
     ///     "content": {
     ///       "parts": [{
-    ///         "text": "réponse générée"
+    ///         "text": "rÃ©ponse gÃ©nÃ©rÃ©e"
     ///       }]
     ///     }
     ///   }]
@@ -220,7 +223,7 @@ Conseil (15 mots max) :";
     {
         try
         {
-            // Récupération de la configuration
+            // RÃ©cupÃ©ration de la configuration
             var model = _configuration.GetSection("Gemini")["Model"] ?? "gemini-1.5-flash";
             var temperature = float.Parse(_configuration.GetSection("Gemini")["Temperature"] ?? "0.3");
             var maxTokens = int.Parse(_configuration.GetSection("Gemini")["MaxTokens"] ?? "30");
@@ -229,7 +232,7 @@ Conseil (15 mots max) :";
             var url = $"{GEMINI_API_BASE_URL}/models/{model}:generateContent?key={apiKey}";
 
             // Construction du payload JSON
-            // JsonSerializer : Sérialise l'objet C# en JSON
+            // JsonSerializer : SÃ©rialise l'objet C# en JSON
             var requestBody = new
             {
                 contents = new[]
@@ -250,7 +253,7 @@ Conseil (15 mots max) :";
             };
 
             var jsonContent = JsonSerializer.Serialize(requestBody);
-            _logger.LogDebug("Requête Gemini : {Json}", jsonContent);
+            _logger.LogDebug("RequÃªte Gemini : {Json}", jsonContent);
 
             // Configuration du contenu HTTP
             // StringContent : Encapsule le JSON pour l'envoi HTTP
@@ -258,34 +261,34 @@ Conseil (15 mots max) :";
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             // ================================================================
-            // ENVOI DE LA REQUÊTE HTTP POST
+            // ENVOI DE LA REQUÃŠTE HTTP POST
             // ================================================================
-            // PostAsync() : Envoi asynchrone de la requête
+            // PostAsync() : Envoi asynchrone de la requÃªte
             // FLUX :
-            // HttpClient ? TCP/IP ? Internet ? Serveurs Google ? API Gemini
-            // API Gemini traite le prompt avec le modèle d'IA
-            // Génère la réponse
-            // Retour : API Gemini ? Internet ? TCP/IP ? HttpClient
+            // HttpClient â†’ TCP/IP â†’ Internet â†’ Serveurs Google â†’ API Gemini
+            // API Gemini traite le prompt avec le modÃ¨le d'IA
+            // GÃ©nÃ¨re la rÃ©ponse
+            // Retour : API Gemini â†’ Internet â†’ TCP/IP â†’ HttpClient
             var response = await _httpClient.PostAsync(url, content);
 
-            // EnsureSuccessStatusCode() : Lève une exception si status ? 200-299
+            // EnsureSuccessStatusCode() : LÃ¨ve une exception si status â‰  200-299
             response.EnsureSuccessStatusCode();
 
-            // Lecture de la réponse JSON
+            // Lecture de la rÃ©ponse JSON
             var responseContent = await response.Content.ReadAsStringAsync();
-            _logger.LogDebug("Réponse Gemini : {Response}", responseContent);
+            _logger.LogDebug("RÃ©ponse Gemini : {Response}", responseContent);
 
             // ================================================================
-            // PARSING DE LA RÉPONSE JSON
+            // PARSING DE LA RÃ‰PONSE JSON
             // ================================================================
-            // JsonDocument : Parser JSON léger et performant
-            // Parse() : Analyse le JSON en structure de données
+            // JsonDocument : Parser JSON lÃ©ger et performant
+            // Parse() : Analyse le JSON en structure de donnÃ©es
             using var jsonDoc = JsonDocument.Parse(responseContent);
             
-            // Navigation dans le JSON pour extraire le texte généré
-            // jsonDoc.RootElement : Élément racine du JSON
-            // GetProperty() : Accède à une propriété
-            // [0] : Accède au premier élément du tableau
+            // Navigation dans le JSON pour extraire le texte gÃ©nÃ©rÃ©
+            // jsonDoc.RootElement : Ã‰lÃ©ment racine du JSON
+            // GetProperty() : AccÃ¨de Ã  une propriÃ©tÃ©
+            // [0] : AccÃ¨de au premier Ã©lÃ©ment du tableau
             var textGenerated = jsonDoc.RootElement
                 .GetProperty("candidates")[0]
                 .GetProperty("content")
@@ -293,76 +296,77 @@ Conseil (15 mots max) :";
                 .GetProperty("text")
                 .GetString();
 
-            // Trim() : Supprime les espaces avant/après
+            // Trim() : Supprime les espaces avant/aprÃ¨s
             return textGenerated?.Trim() ?? "Conseil non disponible.";
         }
         catch (HttpRequestException ex)
         {
-            // Erreur réseau ou erreur API (400, 401, 403, 500, etc.)
-            _logger.LogError(ex, "Erreur HTTP lors de l'appel à l'API Gemini");
+            // Erreur rÃ©seau ou erreur API (400, 401, 403, 500, etc.)
+            _logger.LogError(ex, "Erreur HTTP lors de l'appel Ã  l'API Gemini");
             throw new InvalidOperationException("Erreur de communication avec l'API Gemini", ex);
         }
         catch (JsonException ex)
         {
-            // Erreur de parsing JSON (réponse invalide)
-            _logger.LogError(ex, "Erreur de parsing de la réponse Gemini");
-            throw new InvalidOperationException("Réponse invalide de l'API Gemini", ex);
+            // Erreur de parsing JSON (rÃ©ponse invalide)
+            _logger.LogError(ex, "Erreur de parsing de la rÃ©ponse Gemini");
+            throw new InvalidOperationException("RÃ©ponse invalide de l'API Gemini", ex);
         }
     }
 
-    #region Autres méthodes de l'interface (implémentation complète)
+    #region Autres mÃ©thodes de l'interface (implÃ©mentation complÃ¨te)
 
     /// <inheritdoc />
-    public async Task<string> SuggestCategoryAsync(string description, decimal amount)
+    public async Task<string> SuggestCategoryAsync(int userId, string description, decimal amount)
     {
         try
         {
             _logger.LogInformation(
-                "Suggestion de catégorie pour : '{Description}', montant={Amount}€", 
+                "Suggestion de catÃ©gorie pour userId={UserId} : '{Description}', montant={Amount}â‚¬", 
+                userId,
                 description, 
                 amount
             );
 
             // ================================================================
-            // RÉCUPÉRATION DE LA CLÉ API
+            // RÃ‰CUPÃ‰RATION DE LA CLÃ‰ API
             // ================================================================
             var apiKey = _configuration.GetSection("Gemini")["ApiKey"];
 
             if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
             {
-                _logger.LogWarning("Clé API Gemini non configurée");
-                return "Non catégorisé";
+                _logger.LogWarning("ClÃ© API Gemini non configurÃ©e");
+                return "Non catÃ©gorisÃ©";
             }
 
             // ================================================================
             // CONSTRUCTION DU PROMPT INTELLIGENT
             // ================================================================
-            // On donne à Gemini une liste de catégories standard et le contexte
-            var prompt = $@"Analyse cette transaction et suggère UNE catégorie parmi :
+            // On donne Ã  Gemini une liste de catÃ©gories standard et le contexte
+            var prompt = $@"Analyse cette transaction et suggÃ¨re UNE catÃ©gorie parmi :
 - Alimentation
 - Transport
 - Logement
 - Loisirs
-- Santé
-- Éducation
-- Vêtements
+- SantÃ©
+- Ã‰ducation
+- VÃªtements
 - Technologie
 - Services
 - Autres
 
 Description : {description}
-Montant : {amount:F2}€
+Montant : {amount:F2}â‚¬
 
-Réponds UNIQUEMENT avec le nom exact de la catégorie, sans explication.";
+RÃ©ponds UNIQUEMENT avec le nom exact de la catÃ©gorie, sans explication.";
 
             _logger.LogDebug("Prompt suggestion : {Prompt}", prompt);
 
             // ================================================================
-            // APPEL À GEMINI AVEC PARAMÈTRES OPTIMISÉS
+            // APPEL Ã€ GEMINI AVEC PARAMÃˆTRES OPTIMISÃ‰S
             // ================================================================
-            // Pour une suggestion de catégorie, on veut :
-            // - Très déterministe (temperature basse)
-            // - Réponse ultra-courte (1 mot)
+            // Pour une suggestion de catÃ©gorie, on veut :
+            // - TrÃ¨s dÃ©terministe (temperature basse)
+            // - RÃ©ponse ultra-courte (1 mot)
             var model = _configuration.GetSection("Gemini")["Model"] ?? "gemini-1.5-flash";
             var url = $"{GEMINI_API_BASE_URL}/models/{model}:generateContent?key={apiKey}";
 
@@ -380,7 +384,7 @@ Réponds UNIQUEMENT avec le nom exact de la catégorie, sans explication.";
                 },
                 generationConfig = new
                 {
-                    temperature = 0.2f,      // Très déterministe
+                    temperature = 0.2f,      // TrÃ¨s dÃ©terministe
                     maxOutputTokens = 10     // 1 mot suffit
                 }
             };
@@ -400,43 +404,44 @@ Réponds UNIQUEMENT avec le nom exact de la catégorie, sans explication.";
                 .GetProperty("parts")[0]
                 .GetProperty("text")
                 .GetString()
-                ?.Trim() ?? "Non catégorisé";
+                ?.Trim() ?? "Non catÃ©gorisÃ©";
 
-            _logger.LogInformation("Catégorie suggérée : {Category}", category);
+            _logger.LogInformation("CatÃ©gorie suggÃ©rÃ©e pour userId={UserId} : {Category}", userId, category);
             return category;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la suggestion de catégorie");
-            return "Non catégorisé";
+            _logger.LogError(ex, "Erreur lors de la suggestion de catÃ©gorie pour userId={UserId}", userId);
+            return "Non catÃ©gorisÃ©";
         }
     }
 
     /// <inheritdoc />
-    public async Task<string> GenerateFinancialSummaryAsync(DateTime startDate, DateTime endDate)
+    public async Task<string> GenerateFinancialSummaryAsync(int userId, DateTime startDate, DateTime endDate)
     {
         try
         {
             _logger.LogInformation(
-                "Génération du résumé financier pour la période {StartDate} - {EndDate}", 
+                "GÃ©nÃ©ration du rÃ©sumÃ© financier pour userId={UserId}, pÃ©riode {StartDate} - {EndDate}", 
+                userId,
                 startDate, 
                 endDate
             );
 
             // ================================================================
-            // RÉCUPÉRATION DES TRANSACTIONS POUR LA PÉRIODE
+            // RÃ‰CUPÃ‰RATION DES TRANSACTIONS POUR LA PÃ‰RIODE
             // ================================================================
             var transactions = await _context.Transactions
-                .Where(t => t.Date >= startDate && t.Date <= endDate)
+                .Where(t => t.UserId == userId && t.Date >= startDate && t.Date <= endDate)
                 .ToListAsync();
 
             if (!transactions.Any())
             {
-                return $"Aucune transaction enregistrée entre le {startDate:dd/MM/yyyy} et le {endDate:dd/MM/yyyy}.";
+                return $"Aucune transaction enregistrÃ©e entre le {startDate:dd/MM/yyyy} et le {endDate:dd/MM/yyyy}.";
             }
 
             // ================================================================
-            // CALCUL DES MÉTRIQUES
+            // CALCUL DES MÃ‰TRIQUES
             // ================================================================
             var totalRevenue = transactions
                 .Where(t => t.Type == TransactionType.Income)
@@ -448,7 +453,7 @@ Réponds UNIQUEMENT avec le nom exact de la catégorie, sans explication.";
 
             var balance = totalRevenue - totalExpenses;
 
-            // Top 3 catégories de dépenses
+            // Top 3 catÃ©gories de dÃ©penses
             var topCategories = transactions
                 .Where(t => t.Type == TransactionType.Expense)
                 .GroupBy(t => t.Category)
@@ -457,44 +462,44 @@ Réponds UNIQUEMENT avec le nom exact de la catégorie, sans explication.";
                 .Take(3)
                 .ToList();
 
-            var categoriesText = string.Join(", ", topCategories.Select(c => $"{c.Category} ({c.Total:F2}€)"));
+            var categoriesText = string.Join(", ", topCategories.Select(c => $"{c.Category} ({c.Total:F2}â‚¬)"));
 
             // ================================================================
-            // RÉCUPÉRATION DE LA CLÉ API
+            // RÃ‰CUPÃ‰RATION DE LA CLÃ‰ API
             // ================================================================
             var apiKey = _configuration.GetSection("Gemini")["ApiKey"];
 
             if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
             {
-                _logger.LogWarning("Clé API Gemini non configurée");
+                _logger.LogWarning("ClÃ© API Gemini non configurÃ©e");
                 
                 var tauxEpargne = totalRevenue > 0 ? ((balance / totalRevenue) * 100) : 0;
-                return $"Période du {startDate:dd/MM/yyyy} au {endDate:dd/MM/yyyy} : " +
-                       $"Revenus {totalRevenue:F2}€, Dépenses {totalExpenses:F2}€, " +
-                       $"Solde {balance:F2}€ (taux d'épargne : {tauxEpargne:F1}%).";
+                return $"PÃ©riode du {startDate:dd/MM/yyyy} au {endDate:dd/MM/yyyy} : " +
+                       $"Revenus {totalRevenue:F2}â‚¬, DÃ©penses {totalExpenses:F2}â‚¬, " +
+                       $"Solde {balance:F2}â‚¬ (taux d'Ã©pargne : {tauxEpargne:F1}%).";
             }
 
             // ================================================================
             // CONSTRUCTION DU PROMPT
             // ================================================================
-            var prompt = $@"Génère un résumé financier concis et pédagogique pour la période du {startDate:dd/MM/yyyy} au {endDate:dd/MM/yyyy}.
+            var prompt = $@"GÃ©nÃ¨re un rÃ©sumÃ© financier concis et pÃ©dagogique pour la pÃ©riode du {startDate:dd/MM/yyyy} au {endDate:dd/MM/yyyy}.
 
-Données financières :
-- Revenus totaux : {totalRevenue:F2}€
-- Dépenses totales : {totalExpenses:F2}€
-- Balance : {balance:F2}€
+DonnÃ©es financiÃ¨res :
+- Revenus totaux : {totalRevenue:F2}â‚¬
+- DÃ©penses totales : {totalExpenses:F2}â‚¬
+- Balance : {balance:F2}â‚¬
 - Nombre de transactions : {transactions.Count}
-- Top 3 catégories de dépenses : {categoriesText}
+- Top 3 catÃ©gories de dÃ©penses : {categoriesText}
 
-Génère un résumé en 30-40 mots maximum, avec :
-1. Une évaluation globale
-2. Un point d'attention ou de félicitation
+GÃ©nÃ¨re un rÃ©sumÃ© en 30-40 mots maximum, avec :
+1. Une Ã©valuation globale
+2. Un point d'attention ou de fÃ©licitation
 3. Une recommandation courte";
 
-            _logger.LogDebug("Prompt résumé : {Prompt}", prompt);
+            _logger.LogDebug("Prompt rÃ©sumÃ© crÃ©Ã© pour userId={UserId}", userId);
 
             // ================================================================
-            // APPEL À GEMINI
+            // APPEL Ã€ GEMINI
             // ================================================================
             var model = _configuration.GetSection("Gemini")["Model"] ?? "gemini-1.5-flash";
             var url = $"{GEMINI_API_BASE_URL}/models/{model}:generateContent?key={apiKey}";
@@ -513,8 +518,8 @@ Génère un résumé en 30-40 mots maximum, avec :
                 },
                 generationConfig = new
                 {
-                    temperature = 0.4f,      // Un peu créatif pour la rédaction
-                    maxOutputTokens = 80     // Résumé plus long
+                    temperature = 0.4f,      // Un peu crÃ©atif pour la rÃ©daction
+                    maxOutputTokens = 80     // RÃ©sumÃ© plus long
                 }
             };
 
@@ -533,39 +538,73 @@ Génère un résumé en 30-40 mots maximum, avec :
                 .GetProperty("parts")[0]
                 .GetProperty("text")
                 .GetString()
-                ?.Trim() ?? "Résumé non disponible.";
+                ?.Trim() ?? "RÃ©sumÃ© non disponible.";
 
-            _logger.LogInformation("Résumé généré : {Summary}", summary);
+            _logger.LogInformation("RÃ©sumÃ© gÃ©nÃ©rÃ© pour userId={UserId} : {Summary}", userId, summary);
             return summary;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la génération du résumé financier");
-            return "Impossible de générer un résumé pour le moment.";
+            _logger.LogError(ex, "Erreur lors de la gÃ©nÃ©ration du rÃ©sumÃ© financier pour userId={UserId}. Fallback activÃ©.", userId);
+            
+            try
+            {
+                // Fallback : retourner un rÃ©sumÃ© basique sans Gemini
+                var basicTransactions = await _context.Transactions
+                    .Where(t => t.UserId == userId && t.Date >= startDate && t.Date <= endDate)
+                    .ToListAsync();
+
+                if (!basicTransactions.Any())
+                {
+                    return $"Aucune transaction enregistrÃ©e entre le {startDate:dd/MM/yyyy} et le {endDate:dd/MM/yyyy}.";
+                }
+
+                var basicRevenue = basicTransactions
+                    .Where(t => t.Type == TransactionType.Income)
+                    .Sum(t => t.Amount);
+
+                var basicExpenses = basicTransactions
+                    .Where(t => t.Type == TransactionType.Expense)
+                    .Sum(t => t.Amount);
+
+                var basicBalance = basicRevenue - basicExpenses;
+                var basicSavingsRate = basicRevenue > 0 ? ((basicBalance / basicRevenue) * 100) : 0;
+
+                return $"PÃ©riode {startDate:dd/MM} au {endDate:dd/MM} : " +
+                       $"Revenus {basicRevenue:F2}â‚¬, DÃ©penses {basicExpenses:F2}â‚¬, " +
+                       $"Ã‰pargne {basicBalance:F2}â‚¬ ({basicSavingsRate:F1}% du revenu).";
+            }
+            catch (Exception fallbackEx)
+            {
+                _logger.LogError(fallbackEx, "Erreur mÃªme dans le fallback pour userId={UserId}", userId);
+                return "Impossible de gÃ©nÃ©rer un rÃ©sumÃ© pour le moment. VÃ©rifiez vos donnÃ©es de transactions.";
+            }
         }
     }
 
     /// <inheritdoc />
-    public async Task<List<string>> DetectAnomaliesAsync()
+    public async Task<List<string>> DetectAnomaliesAsync(int userId)
     {
         try
         {
-            _logger.LogInformation("Détection des anomalies dans les transactions");
+            _logger.LogInformation("DÃ©tection des anomalies pour userId={UserId}", userId);
 
             var anomalies = new List<string>();
 
             // ================================================================
-            // RÉCUPÉRATION DES TRANSACTIONS
+            // RÃ‰CUPÃ‰RATION DES TRANSACTIONS
             // ================================================================
-            var transactions = await _context.Transactions.ToListAsync();
+            var transactions = await _context.Transactions
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
 
             if (!transactions.Any())
             {
-                return new List<string> { "Aucune transaction à analyser." };
+                return new List<string> { "Aucune transaction Ã  analyser." };
             }
 
             // ================================================================
-            // CALCUL DES MOYENNES PAR CATÉGORIE
+            // CALCUL DES MOYENNES PAR CATÃ‰GORIE
             // ================================================================
             var expensesByCategory = transactions
                 .Where(t => t.Type == TransactionType.Expense)
@@ -580,20 +619,20 @@ Génère un résumé en 30-40 mots maximum, avec :
                 .ToList();
 
             // ================================================================
-            // DÉTECTION D'ANOMALIES (ÉCART > 50% DE LA MOYENNE)
+            // DÃ‰TECTION D'ANOMALIES (Ã‰CART > 50% DE LA MOYENNE)
             // ================================================================
             foreach (var categoryGroup in expensesByCategory)
             {
                 foreach (var transaction in categoryGroup.Transactions)
                 {
-                    // Si la transaction dépasse de 50% la moyenne, c'est une anomalie
+                    // Si la transaction dÃ©passe de 50% la moyenne, c'est une anomalie
                     if (transaction.Amount > categoryGroup.Average * 1.5m)
                     {
                         var ecartPercent = ((transaction.Amount - categoryGroup.Average) / categoryGroup.Average) * 100;
                         
                         anomalies.Add(
-                            $"Dépense inhabituelle : {transaction.Amount:F2}€ en {transaction.Category} " +
-                            $"le {transaction.Date:dd/MM/yyyy} (moyenne: {categoryGroup.Average:F2}€, écart: +{ecartPercent:F0}%)"
+                            $"DÃ©pense inhabituelle : {transaction.Amount:F2}â‚¬ en {transaction.Category} " +
+                            $"le {transaction.Date:dd/MM/yyyy} (moyenne: {categoryGroup.Average:F2}â‚¬, Ã©cart: +{ecartPercent:F0}%)"
                         );
                     }
                 }
@@ -608,11 +647,11 @@ Génère un résumé en 30-40 mots maximum, avec :
 
                 if (!string.IsNullOrEmpty(apiKey) && apiKey != "YOUR_GEMINI_API_KEY_HERE")
                 {
-                    var prompt = $@"Voici des anomalies détectées dans les dépenses :
+                    var prompt = $@"Voici des anomalies dÃ©tectÃ©es dans les dÃ©penses :
 
 {string.Join("\n", anomalies)}
 
-Pour chaque anomalie, génère une alerte courte et explicite (10 mots max par anomalie).
+Pour chaque anomalie, gÃ©nÃ¨re une alerte courte et explicite (10 mots max par anomalie).
 Format : une ligne par anomalie.";
 
                     try
@@ -665,7 +704,7 @@ Format : une ligne par anomalie.";
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Impossible d'enrichir les anomalies avec Gemini");
+                        _logger.LogWarning(ex, "Impossible d'enrichir les anomalies avec Gemini pour userId={UserId}", userId);
                         // On garde les anomalies brutes
                     }
                 }
@@ -673,42 +712,42 @@ Format : une ligne par anomalie.";
 
             if (!anomalies.Any())
             {
-                anomalies.Add("Aucune anomalie détectée. Vos dépenses sont cohérentes !");
+                anomalies.Add("Aucune anomalie dÃ©tectÃ©e. Vos dÃ©penses sont cohÃ©rentes !");
             }
 
-            _logger.LogInformation("Détection terminée : {Count} anomalie(s) trouvée(s)", anomalies.Count);
+            _logger.LogInformation("DÃ©tection terminÃ©e pour userId={UserId} : {Count} anomalie(s) trouvÃ©e(s)", userId, anomalies.Count);
             return anomalies;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la détection d'anomalies");
-            return new List<string> { "Impossible de détecter les anomalies pour le moment." };
+            _logger.LogError(ex, "Erreur lors de la dÃ©tection d'anomalies pour userId={UserId}", userId);
+            return new List<string> { "Impossible de dÃ©tecter les anomalies pour le moment." };
         }
     }
 
     /// <inheritdoc />
-    public async Task<string> PredictBudgetAsync(int monthsAhead)
+    public async Task<string> PredictBudgetAsync(int userId, int monthsAhead)
     {
         try
         {
-            _logger.LogInformation("Prédiction de budget pour les {Months} prochains mois", monthsAhead);
+            _logger.LogInformation("PrÃ©diction de budget pour userId={UserId}, {Months} prochains mois", userId, monthsAhead);
 
             if (monthsAhead <= 0 || monthsAhead > 12)
             {
-                return "Le nombre de mois doit être entre 1 et 12.";
+                return "Le nombre de mois doit Ãªtre entre 1 et 12.";
             }
 
             // ================================================================
-            // RÉCUPÉRATION DES TRANSACTIONS DES 3 DERNIERS MOIS
+            // RÃ‰CUPÃ‰RATION DES TRANSACTIONS DES 3 DERNIERS MOIS
             // ================================================================
             var threeMonthsAgo = DateTime.Now.AddMonths(-3);
             var recentTransactions = await _context.Transactions
-                .Where(t => t.Date >= threeMonthsAgo)
+                .Where(t => t.UserId == userId && t.Date >= threeMonthsAgo)
                 .ToListAsync();
 
             if (!recentTransactions.Any())
             {
-                return "Pas assez de données historiques pour faire une prédiction (minimum 3 mois).";
+                return "Pas assez de donnÃ©es historiques pour faire une prÃ©diction (minimum 3 mois).";
             }
 
             // ================================================================
@@ -743,37 +782,37 @@ Format : une ligne par anomalie.";
                 : 0;
 
             // ================================================================
-            // RÉCUPÉRATION DE LA CLÉ API
+            // RÃ‰CUPÃ‰RATION DE LA CLÃ‰ API
             // ================================================================
             var apiKey = _configuration.GetSection("Gemini")["ApiKey"];
 
             if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
             {
-                _logger.LogWarning("Clé API Gemini non configurée");
+                _logger.LogWarning("ClÃ© API Gemini non configurÃ©e");
                 
                 var predictedSavings = monthlySavings * monthsAhead;
-                return $"Prédiction simple : Avec vos habitudes actuelles, vous économiserez environ {predictedSavings:F2}€ " +
-                       $"dans {monthsAhead} mois (économies mensuelles moyennes : {monthlySavings:F2}€).";
+                return $"PrÃ©diction simple : Avec vos habitudes actuelles, vous Ã©conomiserez environ {predictedSavings:F2}â‚¬ " +
+                       $"dans {monthsAhead} mois (Ã©conomies mensuelles moyennes : {monthlySavings:F2}â‚¬).";
             }
 
             // ================================================================
             // CONSTRUCTION DU PROMPT
             // ================================================================
-            var prompt = $@"Prédis le budget pour les {monthsAhead} prochains mois en te basant sur ces données.
+            var prompt = $@"PrÃ©dis le budget pour les {monthsAhead} prochains mois en te basant sur ces donnÃ©es.
 
 Historique des 3 derniers mois :
-- Revenus moyens : {monthlyRevenue:F2}€/mois
-- Dépenses moyennes : {monthlyExpenses:F2}€/mois
-- Économies mensuelles : {monthlySavings:F2}€
-- Tendance des dépenses : {trend} de {trendPercent:F1}%
+- Revenus moyens : {monthlyRevenue:F2}â‚¬/mois
+- DÃ©penses moyennes : {monthlyExpenses:F2}â‚¬/mois
+- Ã‰conomies mensuelles : {monthlySavings:F2}â‚¬
+- Tendance des dÃ©penses : {trend} de {trendPercent:F1}%
 
-Génère une prédiction réaliste et motivante en 25 mots maximum.
-Inclus une estimation chiffrée des économies potentielles.";
+GÃ©nÃ¨re une prÃ©diction rÃ©aliste et motivante en 25 mots maximum.
+Inclus une estimation chiffrÃ©e des Ã©conomies potentielles.";
 
-            _logger.LogDebug("Prompt prédiction : {Prompt}", prompt);
+            _logger.LogDebug("Prompt prÃ©diction crÃ©Ã© pour userId={UserId}", userId);
 
             // ================================================================
-            // APPEL À GEMINI
+            // APPEL Ã€ GEMINI
             // ================================================================
             var model = _configuration.GetSection("Gemini")["Model"] ?? "gemini-1.5-flash";
             var url = $"{GEMINI_API_BASE_URL}/models/{model}:generateContent?key={apiKey}";
@@ -792,7 +831,7 @@ Inclus une estimation chiffrée des économies potentielles.";
                 },
                 generationConfig = new
                 {
-                    temperature = 0.5f,      // Plus créatif pour les prédictions
+                    temperature = 0.5f,      // Plus crÃ©atif pour les prÃ©dictions
                     maxOutputTokens = 50
                 }
             };
@@ -812,47 +851,51 @@ Inclus une estimation chiffrée des économies potentielles.";
                 .GetProperty("parts")[0]
                 .GetProperty("text")
                 .GetString()
-                ?.Trim() ?? "Prédiction non disponible.";
+                ?.Trim() ?? "PrÃ©diction non disponible.";
 
-            _logger.LogInformation("Prédiction générée : {Prediction}", prediction);
+            _logger.LogInformation("PrÃ©diction gÃ©nÃ©rÃ©e pour userId={UserId} : {Prediction}", userId, prediction);
             return prediction;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la prédiction de budget");
-            return "Impossible de générer une prédiction pour le moment.";
+            _logger.LogError(ex, "Erreur lors de la prÃ©diction de budget pour userId={UserId}", userId);
+            return "Impossible de gÃ©nÃ©rer une prÃ©diction pour le moment.";
         }
     }
 
     /// <inheritdoc />
-    public async Task<List<string>> GetPortfolioInsightsAsync()
+    public async Task<List<string>> GetPortfolioInsightsAsync(int userId)
     {
         try
         {
-            _logger.LogInformation("Génération d'insights patrimoniaux");
+            _logger.LogInformation("GÃ©nÃ©ration d'insights patrimoniaux pour userId={UserId}", userId);
 
             // ================================================================
-            // RÉCUPÉRATION DES DONNÉES (Assets + Transactions)
+            // RÃ‰CUPÃ‰RATION DES DONNÃ‰ES (Assets + Transactions)
             // ================================================================
-            var assets = await _context.Assets.ToListAsync();
-            var transactions = await _context.Transactions.ToListAsync();
+            var assets = await _context.Assets
+                .Where(a => a.UserId == userId)
+                .ToListAsync();
+            var transactions = await _context.Transactions
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
 
             if (!assets.Any())
             {
                 return new List<string> 
                 { 
-                    "Aucun asset enregistré. Commencez par ajouter vos biens pour une analyse patrimoniale complète." 
+                    "Aucun asset enregistrÃ©. Commencez par ajouter vos biens pour une analyse patrimoniale complÃ¨te." 
                 };
             }
 
             // ================================================================
-            // CALCUL DES MÉTRIQUES PATRIMONIALES
+            // CALCUL DES MÃ‰TRIQUES PATRIMONIALES
             // ================================================================
             
             // 1. Valeur totale du patrimoine
             var totalAssetValue = assets.Sum(a => a.CurrentValue);
 
-            // 2. Répartition par type d'asset
+            // 2. RÃ©partition par type d'asset
             var assetsByType = assets
                 .GroupBy(a => a.Type)
                 .Select(g => new
@@ -892,7 +935,7 @@ Inclus une estimation chiffrée des économies potentielles.";
                 avgMonthlySavings = avgMonthlyRevenue - avgMonthlyExpenses;
             }
 
-            // 4. Calcul des ratios clés
+            // 4. Calcul des ratios clÃ©s
             var revenueToAssetRatio = totalAssetValue > 0 
                 ? (avgMonthlyRevenue / totalAssetValue) * 100 
                 : 0;
@@ -904,66 +947,66 @@ Inclus une estimation chiffrée des économies potentielles.";
                 ? (productiveAssets / totalAssetValue) * 100 
                 : 0;
 
-            // 6. Taux d'épargne
+            // 6. Taux d'Ã©pargne
             var savingsRate = avgMonthlyRevenue > 0 
                 ? (avgMonthlySavings / avgMonthlyRevenue) * 100 
                 : 0;
 
             // ================================================================
-            // CONSTRUCTION DU PROMPT STRUCTURÉ POUR GEMINI
+            // CONSTRUCTION DU PROMPT STRUCTURÃ‰ POUR GEMINI
             // ================================================================
             var assetBreakdown = string.Join("\n", assetsByType.Select(a => 
                 $"  - {a.Type} : {a.Percentage:F1}% ({a.TotalValue:F2} CAD, {a.Count} actif(s))"
             ));
 
-            var prompt = $@"Tu es un conseiller patrimonial expert. Analyse le patrimoine suivant et fournis EXACTEMENT 3 insights stratégiques courts.
+            var prompt = $@"Tu es un conseiller patrimonial expert. Analyse le patrimoine suivant et fournis EXACTEMENT 3 insights stratÃ©giques courts.
 
-DONNÉES PATRIMONIALES :
+DONNÃ‰ES PATRIMONIALES :
 ???????????????????????
 Valeur Totale : {totalAssetValue:F2} CAD
 Nombre d'actifs : {assets.Count}
 
-Répartition par Type :
+RÃ©partition par Type :
 {assetBreakdown}
 
-DONNÉES DE FLUX (3 derniers mois) :
+DONNÃ‰ES DE FLUX (3 derniers mois) :
 ???????????????????????
 Revenus mensuels moyens : {avgMonthlyRevenue:F2} CAD
-Dépenses mensuelles moyennes : {avgMonthlyExpenses:F2} CAD
-Épargne mensuelle moyenne : {avgMonthlySavings:F2} CAD
+DÃ©penses mensuelles moyennes : {avgMonthlyExpenses:F2} CAD
+Ã‰pargne mensuelle moyenne : {avgMonthlySavings:F2} CAD
 
-RATIOS CLÉS :
+RATIOS CLÃ‰S :
 ???????????????????????
 Ratio revenus / patrimoine : {revenueToAssetRatio:F2}% par mois
 Assets productifs (Investissements) : {productiveRatio:F1}% du total
-Taux d'épargne : {savingsRate:F1}%
+Taux d'Ã©pargne : {savingsRate:F1}%
 
-RÈGLES DE GÉNÉRATION :
+RÃˆGLES DE GÃ‰NÃ‰RATION :
 ???????????????????????
-1. Génère EXACTEMENT 3 insights (pas plus, pas moins)
+1. GÃ©nÃ¨re EXACTEMENT 3 insights (pas plus, pas moins)
 2. Chaque insight : 15-20 mots maximum
 3. Ton professionnel et factuel
-4. Pas de recommandations d'investissement risquées
+4. Pas de recommandations d'investissement risquÃ©es
 5. Focus sur la structure du patrimoine et les flux
 6. Utilise des chiffres concrets
 
-FORMAT DE RÉPONSE (STRICT) :
+FORMAT DE RÃ‰PONSE (STRICT) :
 ???????????????????????
-Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
+Retourne UNIQUEMENT les 3 insights sous forme de liste numÃ©rotÃ©e :
 1. [Premier insight sur la structure du patrimoine]
-2. [Deuxième insight sur les flux et ratios]
-3. [Troisième insight stratégique ou recommandation]";
+2. [DeuxiÃ¨me insight sur les flux et ratios]
+3. [TroisiÃ¨me insight stratÃ©gique ou recommandation]";
 
-            _logger.LogDebug("Prompt portfolio insights : {Prompt}", prompt);
+            _logger.LogDebug("Prompt portfolio insights crÃ©Ã© pour userId={UserId}", userId);
 
             // ================================================================
-            // RÉCUPÉRATION DE LA CLÉ API
+            // RÃ‰CUPÃ‰RATION DE LA CLÃ‰ API
             // ================================================================
             var apiKey = _configuration.GetSection("Gemini")["ApiKey"];
 
             if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUR_GEMINI_API_KEY_HERE")
             {
-                _logger.LogWarning("Clé API Gemini non configurée - Génération d'insights basiques");
+                _logger.LogWarning("ClÃ© API Gemini non configurÃ©e - GÃ©nÃ©ration d'insights basiques pour userId={UserId}", userId);
                 
                 // Fallback sans IA : insights basiques
                 var fallbackInsights = new List<string>();
@@ -973,25 +1016,25 @@ Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
                 if (dominantType != null && dominantType.Percentage > 60)
                 {
                     fallbackInsights.Add(
-                        $"Votre patrimoine est fortement concentré en {dominantType.Type} ({dominantType.Percentage:F0}%), ce qui limite la diversification."
+                        $"Votre patrimoine est fortement concentrÃ© en {dominantType.Type} ({dominantType.Percentage:F0}%), ce qui limite la diversification."
                     );
                 }
                 else
                 {
-                    fallbackInsights.Add("Votre patrimoine est diversifié entre plusieurs types d'actifs.");
+                    fallbackInsights.Add("Votre patrimoine est diversifiÃ© entre plusieurs types d'actifs.");
                 }
 
                 // Insight 2 : Ratio revenus/patrimoine
                 if (revenueToAssetRatio < 0.5m)
                 {
                     fallbackInsights.Add(
-                        $"Vos revenus mensuels ({avgMonthlyRevenue:F0} CAD) sont faibles par rapport à votre patrimoine ({totalAssetValue:F0} CAD)."
+                        $"Vos revenus mensuels ({avgMonthlyRevenue:F0} CAD) sont faibles par rapport Ã  votre patrimoine ({totalAssetValue:F0} CAD)."
                     );
                 }
                 else
                 {
                     fallbackInsights.Add(
-                        $"Vos revenus mensuels ({avgMonthlyRevenue:F0} CAD) sont proportionnés à votre patrimoine."
+                        $"Vos revenus mensuels ({avgMonthlyRevenue:F0} CAD) sont proportionnÃ©s Ã  votre patrimoine."
                     );
                 }
 
@@ -1013,7 +1056,7 @@ Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
             }
 
             // ================================================================
-            // APPEL À GEMINI
+            // APPEL Ã€ GEMINI
             // ================================================================
             var model = _configuration.GetSection("Gemini")["Model"] ?? "gemini-1.5-flash";
             var url = $"{GEMINI_API_BASE_URL}/models/{model}:generateContent?key={apiKey}";
@@ -1032,7 +1075,7 @@ Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
                 },
                 generationConfig = new
                 {
-                    temperature = 0.4f,      // Équilibré entre créativité et cohérence
+                    temperature = 0.4f,      // Ã‰quilibrÃ© entre crÃ©ativitÃ© et cohÃ©rence
                     maxOutputTokens = 120    // 3 insights x ~40 tokens
                 }
             };
@@ -1055,13 +1098,13 @@ Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
                 ?.Trim();
 
             // ================================================================
-            // PARSING DE LA RÉPONSE (EXTRACTION DES 3 INSIGHTS)
+            // PARSING DE LA RÃ‰PONSE (EXTRACTION DES 3 INSIGHTS)
             // ================================================================
             var insights = new List<string>();
 
             if (!string.IsNullOrEmpty(generatedText))
             {
-                // Parse les lignes numérotées (1. 2. 3.)
+                // Parse les lignes numÃ©rotÃ©es (1. 2. 3.)
                 var lines = generatedText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                 
                 foreach (var line in lines)
@@ -1072,7 +1115,7 @@ Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
                     if (System.Text.RegularExpressions.Regex.IsMatch(trimmedLine, @"^[0-9]+[\.\)]\s+.*") ||
                         trimmedLine.StartsWith("- "))
                     {
-                        // Nettoyer le numéro/marqueur au début
+                        // Nettoyer le numÃ©ro/marqueur au dÃ©but
                         var cleanedInsight = System.Text.RegularExpressions.Regex.Replace(
                             trimmedLine, 
                             @"^[0-9]+[\.\)]\s+|-\s+", 
@@ -1086,34 +1129,40 @@ Retourne UNIQUEMENT les 3 insights sous forme de liste numérotée :
                     }
                 }
 
-                // Si moins de 3 insights parsés, ajouter le texte brut
+                // Si moins de 3 insights parsÃ©s, ajouter le texte brut
                 if (insights.Count < 3)
                 {
                     insights.Clear();
                     insights.Add(generatedText);
                 }
 
-                // Limiter à 3 insights maximum
+                // Limiter Ã  3 insights maximum
                 insights = insights.Take(3).ToList();
             }
 
             if (!insights.Any())
             {
-                insights.Add("Impossible de générer des insights pour le moment.");
+                insights.Add("Impossible de gÃ©nÃ©rer des insights pour le moment.");
             }
 
-            _logger.LogInformation("Insights générés : {Count} insight(s)", insights.Count);
+            _logger.LogInformation("Insights gÃ©nÃ©rÃ©s pour userId={UserId} : {Count} insight(s)", userId, insights.Count);
             return insights;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la génération d'insights patrimoniaux");
+            _logger.LogError(ex, "Erreur lors de la gÃ©nÃ©ration d'insights patrimoniaux pour userId={UserId}", userId);
             return new List<string> 
             { 
-                "Impossible de générer des insights pour le moment. Vérifiez votre configuration." 
+                "Impossible de gÃ©nÃ©rer des insights pour le moment. VÃ©rifiez votre configuration." 
             };
         }
     }
 
     #endregion
+
+    public Task<string> GetChatResponseAsync(int userId, string message, string? context)
+    {
+        // Service Gemini conservÃ© pour compatibilitÃ©. En prod, GroqAIService est utilisÃ©.
+        return Task.FromResult("Chat IA indisponible sur ce service. Veuillez utiliser Groq.");
+    }
 }

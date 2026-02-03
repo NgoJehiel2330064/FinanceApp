@@ -1,17 +1,20 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinanceApp.Data;
 using FinanceApp.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace FinanceApp.Controllers;
 
 /// <summary>
-/// Controller API REST pour g�rer les actifs/patrimoine (Assets)
+/// Controller API REST pour gï¿½rer les actifs/patrimoine (Assets)
 /// </summary>
 /// <remarks>
-/// Ce controller g�re les endpoints CRUD pour les actifs :
+/// Ce controller gï¿½re les endpoints CRUD pour les actifs :
 /// - Immobilier (RealEstate)
-/// - V�hicules (Vehicle)
+/// - Vï¿½hicules (Vehicle)
 /// - Investissements (Investment)
 /// - Autres (Other)
 /// 
@@ -20,26 +23,27 @@ namespace FinanceApp.Controllers;
 /// </remarks>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AssetsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<AssetsController> _logger;
 
     /// <summary>
-    /// Constructeur avec injection de d�pendances
+    /// Constructeur avec injection de dï¿½pendances
     /// </summary>
-    /// <param name="context">DbContext pour acc�der � la base de donn�es</param>
+    /// <param name="context">DbContext pour accï¿½der ï¿½ la base de donnï¿½es</param>
     /// <param name="logger">Service de logging</param>
     /// <remarks>
-    /// INJECTION DE D�PENDANCES :
+    /// INJECTION DE Dï¿½PENDANCES :
     /// 
-    /// Quand une requ�te HTTP arrive sur /api/assets :
+    /// Quand une requï¿½te HTTP arrive sur /api/assets :
     /// 1. ASP.NET Core identifie le controller : AssetsController
-    /// 2. Regarde les param�tres du constructeur : ApplicationDbContext, ILogger
-    /// 3. Cherche dans le conteneur DI (configur� dans Program.cs)
-    /// 4. Instancie le controller avec ces d�pendances
-    /// 5. Appelle la m�thode d'action correspondante
-    /// 6. � la fin de la requ�te, dispose le DbContext (Scoped)
+    /// 2. Regarde les paramï¿½tres du constructeur : ApplicationDbContext, ILogger
+    /// 3. Cherche dans le conteneur DI (configurï¿½ dans Program.cs)
+    /// 4. Instancie le controller avec ces dï¿½pendances
+    /// 5. Appelle la mï¿½thode d'action correspondante
+    /// 6. ï¿½ la fin de la requï¿½te, dispose le DbContext (Scoped)
     /// </remarks>
     public AssetsController(ApplicationDbContext context, ILogger<AssetsController> logger)
     {
@@ -49,19 +53,19 @@ public class AssetsController : ControllerBase
 
     /// <summary>
     /// GET /api/assets
-    /// R�cup�re la liste de tous les actifs/patrimoine
+    /// Rï¿½cupï¿½re la liste de tous les actifs/patrimoine
     /// </summary>
     /// <returns>Liste des actifs (Asset[])</returns>
     /// <remarks>
-    /// FLUX DE DONN�ES :
-    /// 1. Requ�te GET arrive : /api/assets
-    /// 2. EF Core g�n�re le SQL : SELECT * FROM "Assets"
-    /// 3. PostgreSQL ex�cute la requ�te
-    /// 4. EF Core mappe les r�sultats en List&lt;Asset&gt;
-    /// 5. ASP.NET Core s�rialise en JSON
+    /// FLUX DE DONNï¿½ES :
+    /// 1. Requï¿½te GET arrive : /api/assets
+    /// 2. EF Core gï¿½nï¿½re le SQL : SELECT * FROM "Assets"
+    /// 3. PostgreSQL exï¿½cute la requï¿½te
+    /// 4. EF Core mappe les rï¿½sultats en List&lt;Asset&gt;
+    /// 5. ASP.NET Core sï¿½rialise en JSON
     /// 6. Retourne HTTP 200 OK avec le JSON
     /// 
-    /// EXEMPLE DE R�PONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// [
     ///   {
     ///     "id": 1,
@@ -80,91 +84,137 @@ public class AssetsController : ControllerBase
     /// ]
     /// </remarks>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Asset>>> GetAssets()
+    public async Task<ActionResult<IEnumerable<Asset>>> GetAssets([FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized(new { message = "Token invalide" });
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
-            _logger.LogInformation("R�cup�ration de tous les actifs");
+            _logger.LogInformation("RÃ©cupÃ©ration de tous les actifs pour l'utilisateur {UserId}", userId);
 
-            // ToListAsync() : Requ�te asynchrone vers PostgreSQL
-            // SELECT * FROM "Assets"
-            var assets = await _context.Assets.ToListAsync();
+            // ToListAsync() : RequÃªte asynchrone vers PostgreSQL
+            // SELECT * FROM "Assets" WHERE "UserId" = @userId
+            // Filtre par utilisateur pour l'isolation des donnÃ©es
+            var assets = await _context.Assets
+                .Where(a => a.UserId == userId)
+                .ToListAsync();
 
-            _logger.LogInformation("R�cup�ration de {Count} actifs", assets.Count);
+            _logger.LogInformation("RÃ©cupÃ©ration rÃ©ussie pour l'utilisateur {UserId} : {Count} actifs", userId, assets.Count);
 
             // Ok() : Retourne HTTP 200 avec le JSON
             return Ok(assets);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la r�cup�ration des actifs");
-            return StatusCode(500, new { error = "Erreur serveur lors de la r�cup�ration des actifs" });
+            _logger.LogError(ex, "Erreur lors de la rï¿½cupï¿½ration des actifs");
+            return StatusCode(500, new { error = "Erreur serveur lors de la rï¿½cupï¿½ration des actifs" });
         }
     }
 
     /// <summary>
     /// GET /api/assets/{id}
-    /// R�cup�re un actif sp�cifique par son ID
+    /// Rï¿½cupï¿½re un actif spï¿½cifique par son ID
     /// </summary>
     /// <param name="id">ID de l'actif</param>
     /// <returns>L'actif correspondant ou 404 Not Found</returns>
     /// <remarks>
-    /// FLUX DE DONN�ES :
-    /// 1. Requ�te GET : /api/assets/5
-    /// 2. EF Core g�n�re : SELECT * FROM "Assets" WHERE "Id" = 5
-    /// 3. Si trouv� : retourne HTTP 200 + JSON
-    /// 4. Si non trouv� : retourne HTTP 404 Not Found
+    /// FLUX DE DONNï¿½ES :
+    /// 1. Requï¿½te GET : /api/assets/5
+    /// 2. EF Core gï¿½nï¿½re : SELECT * FROM "Assets" WHERE "Id" = 5
+    /// 3. Si trouvï¿½ : retourne HTTP 200 + JSON
+    /// 4. Si non trouvï¿½ : retourne HTTP 404 Not Found
     /// 
     /// CODES HTTP POSSIBLES :
-    /// - 200 OK : Actif trouv�
+    /// - 200 OK : Actif trouvï¿½
     /// - 404 Not Found : Actif inexistant
     /// - 500 Internal Server Error : Erreur serveur
     /// </remarks>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Asset>> GetAsset(int id)
+    public async Task<ActionResult<Asset>> GetAsset(int id, [FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized(new { message = "Token invalide" });
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
-            _logger.LogInformation("R�cup�ration de l'actif avec ID {Id}", id);
+            _logger.LogInformation("Recherche de l'actif {Id} pour l'utilisateur {UserId}", id, userId);
 
-            // FindAsync() : Recherche par cl� primaire
+            // FindAsync() : Recherche par clÃ© primaire
             // SELECT * FROM "Assets" WHERE "Id" = @id
             var asset = await _context.Assets.FindAsync(id);
 
             if (asset == null)
             {
-                _logger.LogWarning("Actif {Id} non trouv�", id);
+                _logger.LogWarning("Actif {Id} non trouvÃ© pour l'utilisateur {UserId}", id, userId);
                 return NotFound(new { error = $"Actif avec ID {id} introuvable" });
             }
 
-            _logger.LogInformation("Actif {Id} trouv� : {Name}", id, asset.Name);
+            // VÃ©rifier que l'actif appartient Ã  cet utilisateur
+            if (asset.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "Tentative d'accÃ¨s non autorisÃ©e : Actif {Id} appartient Ã  l'utilisateur {AssetUserId}, pas Ã  {RequestedUserId}", 
+                    id, 
+                    asset.UserId, 
+                    userId
+                );
+                // Retourner 403 Forbidden
+                return Forbid();
+            }
+
+            _logger.LogInformation("Actif {Id} trouvï¿½ : {Name}", id, asset.Name);
             return Ok(asset);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la r�cup�ration de l'actif {Id}", id);
-            return StatusCode(500, new { error = "Erreur serveur lors de la r�cup�ration de l'actif" });
+            _logger.LogError(ex, "Erreur lors de la rï¿½cupï¿½ration de l'actif {Id}", id);
+            return StatusCode(500, new { error = "Erreur serveur lors de la rï¿½cupï¿½ration de l'actif" });
         }
     }
 
     /// <summary>
     /// POST /api/assets
-    /// Cr�e un nouvel actif dans le patrimoine
+    /// Crï¿½e un nouvel actif dans le patrimoine
     /// </summary>
-    /// <param name="asset">Donn�es de l'actif � cr�er</param>
-    /// <returns>L'actif cr�� avec son ID g�n�r�</returns>
+    /// <param name="asset">Donnï¿½es de l'actif ï¿½ crï¿½er</param>
+    /// <returns>L'actif crï¿½ï¿½ avec son ID gï¿½nï¿½rï¿½</returns>
     /// <remarks>
-    /// FLUX DE DONN�ES :
-    /// 1. Requ�te POST avec JSON dans le body
-    /// 2. ASP.NET Core d�s�rialise le JSON en objet Asset
+    /// FLUX DE DONNï¿½ES :
+    /// 1. Requï¿½te POST avec JSON dans le body
+    /// 2. ASP.NET Core dï¿½sï¿½rialise le JSON en objet Asset
     /// 3. Validation automatique via [ApiController]
     /// 4. EF Core ajoute l'actif au contexte
-    /// 5. SaveChangesAsync() g�n�re le SQL INSERT
-    /// 6. PostgreSQL ins�re et retourne l'ID auto-incr�ment�
-    /// 7. EF Core met � jour l'objet avec le nouvel ID
+    /// 5. SaveChangesAsync() gï¿½nï¿½re le SQL INSERT
+    /// 6. PostgreSQL insï¿½re et retourne l'ID auto-incrï¿½mentï¿½
+    /// 7. EF Core met ï¿½ jour l'objet avec le nouvel ID
     /// 8. Retourne HTTP 201 Created avec Location header
     /// 
-    /// EXEMPLE DE REQU�TE :
+    /// EXEMPLE DE REQUï¿½TE :
     /// POST /api/assets
     /// {
     ///   "name": "Appartement Marseille",
@@ -174,31 +224,48 @@ public class AssetsController : ControllerBase
     /// }
     /// 
     /// CODES HTTP POSSIBLES :
-    /// - 201 Created : Actif cr�� avec succ�s
-    /// - 400 Bad Request : Donn�es invalides
+    /// - 201 Created : Actif crï¿½ï¿½ avec succï¿½s
+    /// - 400 Bad Request : Donnï¿½es invalides
     /// - 500 Internal Server Error : Erreur serveur
     /// </remarks>
     [HttpPost]
-    public async Task<ActionResult<Asset>> PostAsset(Asset asset)
+    public async Task<ActionResult<Asset>> PostAsset([FromBody] Asset asset, [FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized(new { message = "Token invalide" });
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
-            _logger.LogInformation("Cr�ation d'un nouvel actif : {Name}", asset.Name);
+            _logger.LogInformation("Crï¿½ation d'un nouvel actif : {Name}", asset.Name);
 
-            // Add() : Ajoute l'actif au contexte EF Core (en m�moire)
+            asset.UserId = userId;
+
+            // Add() : Ajoute l'actif au contexte EF Core (en mï¿½moire)
             _context.Assets.Add(asset);
 
-            // SaveChangesAsync() : Persiste en base de donn�es
+            // SaveChangesAsync() : Persiste en base de donnï¿½es
             // INSERT INTO "Assets" (Name, Value, Type, AcquisitionDate)
             // VALUES (@name, @value, @type, @acquisitionDate)
             // RETURNING "Id";
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Actif cr�� avec ID {Id}", asset.Id);
+            _logger.LogInformation("Actif crï¿½ï¿½ avec ID {Id}", asset.Id);
 
             // CreatedAtAction() : Retourne HTTP 201 Created
             // Avec header Location: /api/assets/{id}
-            // Et le JSON de l'actif cr�� dans le body
+            // Et le JSON de l'actif crï¿½ï¿½ dans le body
             return CreatedAtAction(
                 nameof(GetAsset),
                 new { id = asset.Id },
@@ -207,8 +274,8 @@ public class AssetsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la cr�ation de l'actif");
-            return StatusCode(500, new { error = "Erreur serveur lors de la cr�ation de l'actif" });
+            _logger.LogError(ex, "Erreur lors de la crï¿½ation de l'actif");
+            return StatusCode(500, new { error = "Erreur serveur lors de la crï¿½ation de l'actif" });
         }
     }
 
@@ -216,68 +283,101 @@ public class AssetsController : ControllerBase
     /// PUT /api/assets/{id}
     /// Modifie un actif existant
     /// </summary>
-    /// <param name="id">ID de l'actif � modifier</param>
-    /// <param name="asset">Nouvelles donn�es de l'actif</param>
-    /// <returns>HTTP 204 No Content si succ�s</returns>
+    /// <param name="id">ID de l'actif ï¿½ modifier</param>
+    /// <param name="asset">Nouvelles donnï¿½es de l'actif</param>
+    /// <returns>HTTP 204 No Content si succï¿½s</returns>
     /// <remarks>
-    /// FLUX DE DONN�ES :
-    /// 1. V�rification : l'ID dans l'URL doit correspondre � l'ID dans le JSON
-    /// 2. EF Core marque l'entit� comme modifi�e
-    /// 3. SaveChangesAsync() g�n�re le SQL UPDATE
-    /// 4. PostgreSQL met � jour la ligne
-    /// 5. Retourne HTTP 204 No Content (succ�s sans body)
+    /// FLUX DE DONNï¿½ES :
+    /// 1. Vï¿½rification : l'ID dans l'URL doit correspondre ï¿½ l'ID dans le JSON
+    /// 2. EF Core marque l'entitï¿½ comme modifiï¿½e
+    /// 3. SaveChangesAsync() gï¿½nï¿½re le SQL UPDATE
+    /// 4. PostgreSQL met ï¿½ jour la ligne
+    /// 5. Retourne HTTP 204 No Content (succï¿½s sans body)
     /// 
-    /// EXEMPLE DE REQU�TE :
+    /// EXEMPLE DE REQUï¿½TE :
     /// PUT /api/assets/5
     /// {
     ///   "id": 5,
-    ///   "name": "Appartement Marseille (r�nov�)",
+    ///   "name": "Appartement Marseille (rï¿½novï¿½)",
     ///   "value": 310000,
     ///   "type": "RealEstate",
     ///   "acquisitionDate": "2023-01-20T00:00:00Z"
     /// }
     /// 
     /// CODES HTTP POSSIBLES :
-    /// - 204 No Content : Modification r�ussie
-    /// - 400 Bad Request : ID incoh�rent
+    /// - 204 No Content : Modification rï¿½ussie
+    /// - 400 Bad Request : ID incohï¿½rent
     /// - 404 Not Found : Actif inexistant
     /// - 500 Internal Server Error : Erreur serveur
     /// </remarks>
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutAsset(int id, Asset asset)
+    public async Task<IActionResult> PutAsset(int id, [FromBody] Asset asset, [FromQuery] int userId)
     {
-        // V�rification : l'ID de l'URL doit correspondre � l'ID du JSON
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized(new { message = "Token invalide" });
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
+        // Vï¿½rification : l'ID de l'URL doit correspondre ï¿½ l'ID du JSON
         if (id != asset.Id)
         {
-            _logger.LogWarning("Tentative de modification avec ID incoh�rent : URL={UrlId}, Body={BodyId}", id, asset.Id);
-            return BadRequest(new { error = "L'ID dans l'URL ne correspond pas � l'ID de l'actif" });
+            _logger.LogWarning("Tentative de modification avec ID incohï¿½rent : URL={UrlId}, Body={BodyId}", id, asset.Id);
+            return BadRequest(new { error = "L'ID dans l'URL ne correspond pas ï¿½ l'ID de l'actif" });
         }
 
         try
         {
-            _logger.LogInformation("Modification de l'actif {Id}", id);
+            _logger.LogInformation("Mise à jour de l'actif {Id} pour l'utilisateur {UserId}", id, userId);
 
-            // Entry().State : Indique � EF Core que l'entit� est modifi�e
-            // EF Core va g�n�rer un UPDATE avec tous les champs
+            // Vérifier que l'actif appartient à cet utilisateur
+            var existingAsset = await _context.Assets.FindAsync(id);
+            if (existingAsset != null && existingAsset.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "Tentative de modification non autorisée : Actif {Id} appartient à l'utilisateur {AssetUserId}, pas à {RequestedUserId}", 
+                    id, 
+                    existingAsset.UserId, 
+                    userId
+                );
+                return Forbid();
+            }
+
+            if (existingAsset != null)
+            {
+                asset.UserId = existingAsset.UserId;
+            }
+
+            // Entry().State : Indique ï¿½ EF Core que l'entitï¿½ est modifiï¿½e
+            // EF Core va gï¿½nï¿½rer un UPDATE avec tous les champs
             _context.Entry(asset).State = EntityState.Modified;
 
-            // SaveChangesAsync() : G�n�re et ex�cute le SQL UPDATE
+            // SaveChangesAsync() : Gï¿½nï¿½re et exï¿½cute le SQL UPDATE
             // UPDATE "Assets" SET Name = @name, Value = @value, ...
             // WHERE "Id" = @id
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Actif {Id} modifi� avec succ�s", id);
+            _logger.LogInformation("Actif {Id} modifiï¿½ avec succï¿½s", id);
 
-            // NoContent() : HTTP 204 No Content (succ�s sans body)
+            // NoContent() : HTTP 204 No Content (succï¿½s sans body)
             return NoContent();
         }
         catch (DbUpdateConcurrencyException)
         {
             // Gestion des conflits de concurrence
-            // (si l'actif a �t� supprim� entre-temps)
+            // (si l'actif a ï¿½tï¿½ supprimï¿½ entre-temps)
             if (!AssetExists(id))
             {
-                _logger.LogWarning("Actif {Id} non trouv� lors de la modification", id);
+                _logger.LogWarning("Actif {Id} non trouvï¿½ lors de la modification", id);
                 return NotFound(new { error = $"Actif avec ID {id} introuvable" });
             }
             else
@@ -296,45 +396,71 @@ public class AssetsController : ControllerBase
     /// DELETE /api/assets/{id}
     /// Supprime un actif du patrimoine
     /// </summary>
-    /// <param name="id">ID de l'actif � supprimer</param>
-    /// <returns>HTTP 204 No Content si succ�s</returns>
+    /// <param name="id">ID de l'actif ï¿½ supprimer</param>
+    /// <returns>HTTP 204 No Content si succï¿½s</returns>
     /// <remarks>
-    /// FLUX DE DONN�ES :
+    /// FLUX DE DONNï¿½ES :
     /// 1. Recherche de l'actif par ID
-    /// 2. Si trouv� : EF Core marque pour suppression
-    /// 3. SaveChangesAsync() g�n�re le SQL DELETE
+    /// 2. Si trouvï¿½ : EF Core marque pour suppression
+    /// 3. SaveChangesAsync() gï¿½nï¿½re le SQL DELETE
     /// 4. PostgreSQL supprime la ligne
     /// 5. Retourne HTTP 204 No Content
     /// 
     /// CODES HTTP POSSIBLES :
-    /// - 204 No Content : Suppression r�ussie
+    /// - 204 No Content : Suppression rï¿½ussie
     /// - 404 Not Found : Actif inexistant
     /// - 500 Internal Server Error : Erreur serveur
     /// </remarks>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteAsset(int id)
+    public async Task<IActionResult> DeleteAsset(int id, [FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized(new { message = "Token invalide" });
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
-            _logger.LogInformation("Suppression de l'actif {Id}", id);
+            _logger.LogInformation("Suppression de l'actif {Id} pour l'utilisateur {UserId}", id, userId);
 
-            // FindAsync() : Recherche par cl� primaire
+            // FindAsync() : Recherche par clï¿½ primaire
             var asset = await _context.Assets.FindAsync(id);
 
             if (asset == null)
             {
-                _logger.LogWarning("Actif {Id} non trouv� pour suppression", id);
+                _logger.LogWarning("Actif {Id} non trouvï¿½ pour suppression", id);
                 return NotFound(new { error = $"Actif avec ID {id} introuvable" });
             }
 
-            // Remove() : Marque l'entit� pour suppression
+            if (asset.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "Tentative de suppression non autorisï¿½e : Actif {Id} appartient ï¿½ l'utilisateur {AssetUserId}, pas ï¿½ {RequestedUserId}",
+                    id,
+                    asset.UserId,
+                    userId
+                );
+                return Forbid();
+            }
+
+            // Remove() : Marque l'entitï¿½ pour suppression
             _context.Assets.Remove(asset);
 
-            // SaveChangesAsync() : G�n�re et ex�cute le SQL DELETE
+            // SaveChangesAsync() : Gï¿½nï¿½re et exï¿½cute le SQL DELETE
             // DELETE FROM "Assets" WHERE "Id" = @id
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Actif {Id} supprim� avec succ�s", id);
+            _logger.LogInformation("Actif {Id} supprimï¿½ avec succï¿½s", id);
 
             // NoContent() : HTTP 204 No Content
             return NoContent();
@@ -352,34 +478,51 @@ public class AssetsController : ControllerBase
     /// </summary>
     /// <returns>Somme des valeurs de tous les actifs</returns>
     /// <remarks>
-    /// FLUX DE DONN�ES :
-    /// 1. EF Core g�n�re : SELECT SUM("Value") FROM "Assets"
+    /// FLUX DE DONNï¿½ES :
+    /// 1. EF Core gï¿½nï¿½re : SELECT SUM("Value") FROM "Assets"
     /// 2. PostgreSQL calcule la somme
-    /// 3. Retourne le montant total en d�cimal
+    /// 3. Retourne le montant total en dï¿½cimal
     /// 
-    /// EXEMPLE DE R�PONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// 532000.00
     /// 
     /// Si aucun actif : retourne 0
     /// 
-    /// UTILIT� :
+    /// UTILITï¿½ :
     /// - Dashboard : afficher la valeur totale du patrimoine
     /// - Rapports financiers
-    /// - Suivi de l'�volution du patrimoine
+    /// - Suivi de l'ï¿½volution du patrimoine
     /// </remarks>
     [HttpGet("total-value")]
-    public async Task<ActionResult<decimal>> GetTotalValue()
+    public async Task<ActionResult<decimal>> GetTotalValue([FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized(new { message = "Token invalide" });
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
             _logger.LogInformation("Calcul de la valeur totale du patrimoine");
 
-            // SumAsync() : Calcule la somme directement en base de donn�es
+            // SumAsync() : Calcule la somme directement en base de donnï¿½es
             // SELECT SUM("CurrentValue") FROM "Assets"
             // Performant : le calcul est fait par PostgreSQL, pas en C#
-            var totalValue = await _context.Assets.SumAsync(a => a.CurrentValue);
+            var totalValue = await _context.Assets
+                .Where(a => a.UserId == userId)
+                .SumAsync(a => a.CurrentValue);
 
-            _logger.LogInformation("Valeur totale du patrimoine : {TotalValue}�", totalValue);
+            _logger.LogInformation("Valeur totale du patrimoine : {TotalValue}ï¿½", totalValue);
 
             // Ok() : HTTP 200 avec le montant en JSON
             return Ok(totalValue);
@@ -392,18 +535,35 @@ public class AssetsController : ControllerBase
     }
 
     /// <summary>
-    /// M�thode helper priv�e : v�rifie si un actif existe
+    /// Mï¿½thode helper privï¿½e : vï¿½rifie si un actif existe
     /// </summary>
     /// <param name="id">ID de l'actif</param>
     /// <returns>True si l'actif existe, False sinon</returns>
     /// <remarks>
-    /// Utilis� pour g�rer les conflits de concurrence dans PUT
+    /// Utilisï¿½ pour gï¿½rer les conflits de concurrence dans PUT
     /// 
-    /// AnyAsync() : G�n�re SELECT EXISTS(SELECT 1 FROM "Assets" WHERE "Id" = @id)
-    /// Performant : retourne d�s qu'une ligne est trouv�e
+    /// AnyAsync() : Gï¿½nï¿½re SELECT EXISTS(SELECT 1 FROM "Assets" WHERE "Id" = @id)
+    /// Performant : retourne dï¿½s qu'une ligne est trouvï¿½e
     /// </remarks>
     private bool AssetExists(int id)
     {
         return _context.Assets.Any(e => e.Id == id);
     }
+
+    private int? GetUserIdFromToken()
+    {
+        var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        return int.TryParse(claimValue, out var userId) ? userId : null;
+    }
 }
+
+
+
+
+
+
+
+
+

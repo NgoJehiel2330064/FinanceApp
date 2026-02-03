@@ -24,6 +24,16 @@ public class Transaction
     public int Id { get; set; }
 
     /// <summary>
+    /// Identifiant de l'utilisateur propriétaire de cette transaction
+    /// </summary>
+    /// <remarks>
+    /// Clé étrangère vers la table Users
+    /// Permet d'isoler les données par utilisateur
+    /// </remarks>
+    [Required]
+    public int UserId { get; set; }
+
+    /// <summary>
     /// Date et heure de la transaction
     /// </summary>
     /// <remarks>
@@ -86,6 +96,36 @@ public class Transaction
     /// Utile pour l'audit et le debugging
     /// </remarks>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Méthode de paiement utilisée pour cette transaction
+    /// </summary>
+    /// <remarks>
+    /// Permet de tracer la source des flux financiers :
+    /// - Cash : espèces
+    /// - BankAccount : compte bancaire
+    /// - CreditCard : carte de crédit (augmente la dette)
+    /// - Debit : débit automatique d'un prêt
+    /// </remarks>
+    public PaymentMethod? PaymentMethod { get; set; }
+
+    /// <summary>
+    /// ID de l'actif source (si PaymentMethod = BankAccount)
+    /// </summary>
+    /// <remarks>
+    /// Clé étrangère nullable vers Assets
+    /// Ex: Transaction payée via "Compte Courant BNP" (Asset ID 5)
+    /// </remarks>
+    public int? SourceAssetId { get; set; }
+
+    /// <summary>
+    /// ID du passif source (si PaymentMethod = CreditCard/Loan)
+    /// </summary>
+    /// <remarks>
+    /// Clé étrangère nullable vers Liabilities
+    /// Ex: Achat avec "Visa Premier" (Liability ID 2)
+    /// </remarks>
+    public int? SourceLiabilityId { get; set; }
 }
 
 /// <summary>
@@ -109,4 +149,39 @@ public enum TransactionType
     /// Revenu (argent entrant)
     /// </summary>
     Income = 1
+}
+
+/// <summary>
+/// Enum pour la méthode de paiement
+/// </summary>
+/// <remarks>
+/// Définit la source du flux financier pour synchroniser automatiquement
+/// le patrimoine (actifs/passifs) avec les transactions
+/// </remarks>
+public enum PaymentMethod
+{
+    /// <summary>
+    /// Espèces (cash) - pas de trace dans actifs/passifs
+    /// </summary>
+    Cash = 0,
+
+    /// <summary>
+    /// Compte bancaire - impacte un Asset de type BankAccount
+    /// </summary>
+    BankAccount = 1,
+
+    /// <summary>
+    /// Carte de crédit - impacte un Liability de type CreditCard
+    /// </summary>
+    CreditCard = 2,
+
+    /// <summary>
+    /// Débit automatique d'un prêt - impacte un Liability
+    /// </summary>
+    LoanDebit = 3,
+
+    /// <summary>
+    /// Autre méthode de paiement
+    /// </summary>
+    Other = 4
 }

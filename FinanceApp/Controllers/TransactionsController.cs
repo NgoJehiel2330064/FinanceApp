@@ -1,168 +1,221 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinanceApp.Data;
 using FinanceApp.Models;
 using FinanceApp.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace FinanceApp.Controllers;
 
 /// <summary>
-/// Controller API REST pour gérer les transactions financières
+/// Controller API REST pour gï¿½rer les transactions financiï¿½res
 /// </summary>
 /// <remarks>
-/// [ApiController] : Attribut qui active des comportements spécifiques aux API :
+/// [ApiController] : Attribut qui active des comportements spï¿½cifiques aux API :
 /// - Validation automatique du ModelState
-/// - Binding automatique des paramètres depuis [FromBody], [FromQuery], etc.
-/// - Réponses HTTP standardisées (400, 404, 500)
+/// - Binding automatique des paramï¿½tres depuis [FromBody], [FromQuery], etc.
+/// - Rï¿½ponses HTTP standardisï¿½es (400, 404, 500)
 /// 
-/// [Route("api/[controller]")] : Définit la route de base
-/// - [controller] est remplacé par "Transactions" (nom du controller sans "Controller")
+/// [Route("api/[controller]")] : Dï¿½finit la route de base
+/// - [controller] est remplacï¿½ par "Transactions" (nom du controller sans "Controller")
 /// - Route finale : /api/transactions
 /// </remarks>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TransactionsController : ControllerBase
 {
-    // ApplicationDbContext : Pour accéder à la base de données
+    // ApplicationDbContext : Pour accï¿½der ï¿½ la base de donnï¿½es
     private readonly ApplicationDbContext _context;
     
-    // IGeminiService : Pour utiliser l'IA (suggérer catégories, etc.)
+    // IGeminiService : Pour utiliser l'IA (suggï¿½rer catï¿½gories, etc.)
     private readonly IGeminiService _geminiService;
     
-    // ILogger : Pour tracer les opérations et erreurs
+    // INetWorthService : Pour synchroniser transactions â†’ patrimoine
+    private readonly INetWorthService _netWorthService;
+    
+    // ILogger : Pour tracer les opï¿½rations et erreurs
     private readonly ILogger<TransactionsController> _logger;
 
     /// <summary>
-    /// Constructeur avec injection de dépendances
+    /// Constructeur avec injection de dï¿½pendances
     /// </summary>
     /// <remarks>
-    /// INJECTION DE DÉPENDANCES (DI) :
+    /// INJECTION DE Dï¿½PENDANCES (DI) :
     /// 
-    /// Quand une requête HTTP arrive, ASP.NET Core fait ceci :
-    /// 1. Regarde quel controller doit traiter la requête (TransactionsController)
-    /// 2. Vérifie les paramètres du constructeur (context, geminiService, logger)
-    /// 3. Cherche dans le conteneur DI les services enregistrés (dans Program.cs)
-    /// 4. Instancie le controller en injectant les dépendances
-    /// 5. Appelle la méthode d'action (Get, Post, etc.)
+    /// Quand une requï¿½te HTTP arrive, ASP.NET Core fait ceci :
+    /// 1. Regarde quel controller doit traiter la requï¿½te (TransactionsController)
+    /// 2. Vï¿½rifie les paramï¿½tres du constructeur (context, geminiService, logger)
+    /// 3. Cherche dans le conteneur DI les services enregistrï¿½s (dans Program.cs)
+    /// 4. Instancie le controller en injectant les dï¿½pendances
+    /// 5. Appelle la mï¿½thode d'action (Get, Post, etc.)
     /// 
-    /// DURÉE DE VIE (Scopes) :
-    /// - ApplicationDbContext : Scoped (une instance par requête HTTP)
-    ///   -> Créé au début de la requête, détruit à la fin
-    ///   -> Évite les problèmes de concurrence entre requêtes
+    /// DURï¿½E DE VIE (Scopes) :
+    /// - ApplicationDbContext : Scoped (une instance par requï¿½te HTTP)
+    ///   -> Crï¿½ï¿½ au dï¿½but de la requï¿½te, dï¿½truit ï¿½ la fin
+    ///   -> ï¿½vite les problï¿½mes de concurrence entre requï¿½tes
     /// 
     /// - IGeminiService : Scoped ou Singleton selon la configuration
     ///   -> On utilisera Scoped pour ce projet
     /// 
-    /// - ILogger : Singleton (une seule instance partagée)
-    ///   -> Pas d'état, juste pour écrire des logs
+    /// - ILogger : Singleton (une seule instance partagï¿½e)
+    ///   -> Pas d'ï¿½tat, juste pour ï¿½crire des logs
     /// </remarks>
     public TransactionsController(
         ApplicationDbContext context,
         IGeminiService geminiService,
+        INetWorthService netWorthService,
         ILogger<TransactionsController> logger)
     {
         _context = context;
         _geminiService = geminiService;
+        _netWorthService = netWorthService;
         _logger = logger;
     }
 
     /// <summary>
     /// GET /api/transactions
-    /// Récupère toutes les transactions
+    /// Rï¿½cupï¿½re toutes les transactions
     /// </summary>
     /// <remarks>
-    /// [HttpGet] : Indique que cette méthode répond aux requêtes GET
+    /// [HttpGet] : Indique que cette mï¿½thode rï¿½pond aux requï¿½tes GET
     /// 
     /// ASYNC/AWAIT :
-    /// - ToListAsync() : Requête asynchrone à la base de données
-    /// - Pendant que PostgreSQL traite la requête, le thread est libéré
-    /// - Permet de gérer plus de requêtes simultanément
-    /// - Important pour la scalabilité (performance sous charge)
+    /// - ToListAsync() : Requï¿½te asynchrone ï¿½ la base de donnï¿½es
+    /// - Pendant que PostgreSQL traite la requï¿½te, le thread est libï¿½rï¿½
+    /// - Permet de gï¿½rer plus de requï¿½tes simultanï¿½ment
+    /// - Important pour la scalabilitï¿½ (performance sous charge)
     /// 
     /// ActionResult<T> : Type de retour pour les API
-    /// - Ok(data) retourne 200 avec les données en JSON
+    /// - Ok(data) retourne 200 avec les donnï¿½es en JSON
     /// - BadRequest() retourne 400
     /// - NotFound() retourne 404
     /// </remarks>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions()
+    public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions([FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized("Token invalide");
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
-            _logger.LogInformation("Récupération de toutes les transactions");
+            _logger.LogInformation("RÃ©cupÃ©ration de toutes les transactions pour l'utilisateur {UserId}", userId);
 
             // EF Core traduit ceci en SQL :
-            // SELECT * FROM "Transactions" ORDER BY "Date" DESC
-            // L'ordre DESC affiche les plus récentes en premier
+            // SELECT * FROM "Transactions" WHERE "UserId" = @userId ORDER BY "Date" DESC
+            // Filtre par utilisateur pour l'isolation des donnÃ©es
             var transactions = await _context.Transactions
+                .Where(t => t.UserId == userId)
                 .OrderByDescending(t => t.Date)
                 .ToListAsync();
 
-            _logger.LogInformation("Récupération réussie : {Count} transactions", transactions.Count);
+            _logger.LogInformation("RÃ©cupÃ©ration rÃ©ussie pour l'utilisateur {UserId} : {Count} transactions", userId, transactions.Count);
 
-            // Ok() retourne HTTP 200 avec les données en JSON
+            // Ok() retourne HTTP 200 avec les donnï¿½es en JSON
             return Ok(transactions);
         }
         catch (Exception ex)
         {
-            // En cas d'erreur (ex: base de données inaccessible)
-            _logger.LogError(ex, "Erreur lors de la récupération des transactions");
+            // En cas d'erreur (ex: base de donnï¿½es inaccessible)
+            _logger.LogError(ex, "Erreur lors de la rï¿½cupï¿½ration des transactions");
             
             // StatusCode(500) retourne HTTP 500 Internal Server Error
-            return StatusCode(500, "Erreur lors de la récupération des transactions");
+            return StatusCode(500, "Erreur lors de la rï¿½cupï¿½ration des transactions");
         }
     }
 
     /// <summary>
     /// GET /api/transactions/{id}
-    /// Récupère une transaction spécifique par son ID
+    /// Rï¿½cupï¿½re une transaction spï¿½cifique par son ID
     /// </summary>
     /// <param name="id">ID de la transaction</param>
     /// <remarks>
-    /// [HttpGet("{id}")] : Route avec paramètre dynamique
+    /// [HttpGet("{id}")] : Route avec paramï¿½tre dynamique
     /// - Exemple : GET /api/transactions/5
-    /// - {id} dans la route correspond au paramètre "int id"
+    /// - {id} dans la route correspond au paramï¿½tre "int id"
     /// 
-    /// FindAsync(id) : Recherche par clé primaire
-    /// - Très rapide (utilise l'index de la clé primaire)
+    /// FindAsync(id) : Recherche par clï¿½ primaire
+    /// - Trï¿½s rapide (utilise l'index de la clï¿½ primaire)
     /// - SQL : SELECT * FROM "Transactions" WHERE "Id" = @id
     /// </remarks>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Transaction>> GetTransaction(int id)
+    public async Task<ActionResult<Transaction>> GetTransaction(int id, [FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized("Token invalide");
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
-            _logger.LogInformation("Recherche de la transaction {Id}", id);
+            _logger.LogInformation("Recherche de la transaction {Id} pour l'utilisateur {UserId}", id, userId);
 
             var transaction = await _context.Transactions.FindAsync(id);
 
             if (transaction == null)
             {
-                _logger.LogWarning("Transaction {Id} non trouvée", id);
+                _logger.LogWarning("Transaction {Id} non trouvÃ©e pour l'utilisateur {UserId}", id, userId);
                 
                 // NotFound() retourne HTTP 404
-                return NotFound(new { message = $"Transaction {id} non trouvée" });
+                return NotFound(new { message = $"Transaction {id} non trouvÃ©e" });
+            }
+
+            // VÃ©rifier que la transaction appartient Ã  cet utilisateur
+            if (transaction.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "Tentative d'accÃ¨s non autorisÃ©e : Transaction {Id} appartient Ã  l'utilisateur {TransactionUserId}, pas Ã  {RequestedUserId}", 
+                    id, 
+                    transaction.UserId, 
+                    userId
+                );
+                // Retourner 403 Forbidden
+                return Forbid();
             }
 
             return Ok(transaction);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la récupération de la transaction {Id}", id);
-            return StatusCode(500, "Erreur lors de la récupération de la transaction");
+            _logger.LogError(ex, "Erreur lors de la rï¿½cupï¿½ration de la transaction {Id}", id);
+            return StatusCode(500, "Erreur lors de la rï¿½cupï¿½ration de la transaction");
         }
     }
 
     /// <summary>
     /// POST /api/transactions
-    /// Crée une nouvelle transaction
+    /// Crï¿½e une nouvelle transaction
     /// </summary>
-    /// <param name="transaction">Données de la transaction (envoyées dans le body JSON)</param>
+    /// <param name="transaction">Donnï¿½es de la transaction (envoyï¿½es dans le body JSON)</param>
     /// <remarks>
-    /// [HttpPost] : Répond aux requêtes POST (création)
+    /// [HttpPost] : Rï¿½pond aux requï¿½tes POST (crï¿½ation)
     /// 
-    /// [FromBody] : Les données viennent du corps de la requête HTTP en JSON
-    /// - ASP.NET Core désérialise automatiquement le JSON en objet Transaction
+    /// [FromBody] : Les donnï¿½es viennent du corps de la requï¿½te HTTP en JSON
+    /// - ASP.NET Core dï¿½sï¿½rialise automatiquement le JSON en objet Transaction
     /// - Exemple de JSON :
     ///   {
     ///     "date": "2024-01-15",
@@ -177,74 +230,118 @@ public class TransactionsController : ControllerBase
     /// - Si invalide, retourne HTTP 400 automatiquement
     /// 
     /// SaveChangesAsync() :
-    /// - EF Core génère le SQL INSERT
-    /// - PostgreSQL crée la ligne et retourne l'ID auto-généré
-    /// - L'objet transaction est mis à jour avec le nouvel ID
+    /// - EF Core gï¿½nï¿½re le SQL INSERT
+    /// - PostgreSQL crï¿½e la ligne et retourne l'ID auto-gï¿½nï¿½rï¿½
+    /// - L'objet transaction est mis ï¿½ jour avec le nouvel ID
     /// </remarks>
     [HttpPost]
-    public async Task<ActionResult<Transaction>> CreateTransaction([FromBody] Transaction transaction)
+    public async Task<ActionResult<Transaction>> CreateTransaction([FromBody] Transaction transaction, [FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized("Token invalide");
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
             _logger.LogInformation(
-                "Création d'une nouvelle transaction : {Description}, {Amount}€", 
+                "CrÃ©ation d'une nouvelle transaction pour l'utilisateur {UserId} : {Description}, {Amount}â‚¬", 
+                userId,
                 transaction.Description, 
                 transaction.Amount
             );
 
-            // Définir les métadonnées
+            // DÃ©finir les mÃ©tadonnÃ©es et associer Ã  l'utilisateur
+            transaction.UserId = userId;
             transaction.CreatedAt = DateTime.UtcNow;
 
-            // Add() ajoute l'entité au contexte (pas encore en base)
+            // Add() ajoute l'entitï¿½ au contexte (pas encore en base)
             _context.Transactions.Add(transaction);
 
-            // SaveChangesAsync() exécute réellement l'INSERT dans PostgreSQL
-            // Retourne le nombre de lignes affectées
+            // SaveChangesAsync() exï¿½cute rï¿½ellement l'INSERT dans PostgreSQL
+            // Retourne le nombre de lignes affectï¿½es
             await _context.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Transaction créée avec succès : ID={Id}", 
+                "Transaction crï¿½ï¿½e avec succï¿½s : ID={Id}", 
                 transaction.Id
             );
 
+            // SYNCHRONISATION PATRIMOINE : Mettre Ã  jour automatiquement actifs/passifs
+            try
+            {
+                await _netWorthService.SyncTransactionImpactAsync(transaction, TransactionOperation.Create);
+                _logger.LogInformation("Synchronisation patrimoine rÃ©ussie pour la transaction {Id}", transaction.Id);
+            }
+            catch (Exception syncEx)
+            {
+                _logger.LogError(syncEx, "Erreur lors de la synchronisation patrimoine pour la transaction {Id}", transaction.Id);
+                // On ne bloque pas la crÃ©ation, mais on log l'erreur
+            }
+
             // CreatedAtAction retourne HTTP 201 Created
-            // + En-tête Location: /api/transactions/{id}
-            // + Les données de la transaction dans le body
+            // + En-tï¿½te Location: /api/transactions/{id}
+            // + Les donnï¿½es de la transaction dans le body
             return CreatedAtAction(
                 nameof(GetTransaction),  // Nom de l'action pour construire l'URL
-                new { id = transaction.Id },  // Paramètres de route
-                transaction  // Données à retourner
+                new { id = transaction.Id },  // Paramï¿½tres de route
+                transaction  // Donnï¿½es ï¿½ retourner
             );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la création de la transaction");
-            return StatusCode(500, "Erreur lors de la création de la transaction");
+            _logger.LogError(ex, "Erreur lors de la crï¿½ation de la transaction");
+            return StatusCode(500, "Erreur lors de la crï¿½ation de la transaction");
         }
     }
 
     /// <summary>
     /// PUT /api/transactions/{id}
-    /// Met à jour une transaction existante
+    /// Met ï¿½ jour une transaction existante
     /// </summary>
-    /// <param name="id">ID de la transaction à modifier</param>
-    /// <param name="transaction">Nouvelles données de la transaction</param>
+    /// <param name="id">ID de la transaction ï¿½ modifier</param>
+    /// <param name="transaction">Nouvelles donnï¿½es de la transaction</param>
     /// <remarks>
-    /// [HttpPut("{id}")] : Répond aux requêtes PUT (mise à jour complète)
+    /// [HttpPut("{id}")] : Rï¿½pond aux requï¿½tes PUT (mise ï¿½ jour complï¿½te)
     /// 
     /// PROCESSUS :
-    /// 1. Vérifier que l'ID dans l'URL correspond à l'ID dans le body
-    /// 2. Vérifier que la transaction existe
-    /// 3. Marquer l'entité comme modifiée
-    /// 4. Sauvegarder (génère UPDATE en SQL)
+    /// 1. Vï¿½rifier que l'ID dans l'URL correspond ï¿½ l'ID dans le body
+    /// 2. Vï¿½rifier que la transaction existe
+    /// 3. Marquer l'entitï¿½ comme modifiï¿½e
+    /// 4. Sauvegarder (gï¿½nï¿½re UPDATE en SQL)
     /// </remarks>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateTransaction(int id, [FromBody] Transaction transaction)
+    public async Task<IActionResult> UpdateTransaction(int id, [FromBody] Transaction transaction, [FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized("Token invalide");
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         if (id != transaction.Id)
         {
             _logger.LogWarning(
-                "Tentative de modification avec ID incohérent : URL={UrlId}, Body={BodyId}", 
+                "Tentative de modification avec ID incohÃ©rent : URL={UrlId}, Body={BodyId}", 
                 id, 
                 transaction.Id
             );
@@ -253,27 +350,62 @@ public class TransactionsController : ControllerBase
 
         try
         {
-            _logger.LogInformation("Mise à jour de la transaction {Id}", id);
+            _logger.LogInformation("Mise Ã  jour de la transaction {Id} pour l'utilisateur {UserId}", id, userId);
 
-            // Entry() récupère le "tracker" de cette entité
-            // State = Modified : Indique à EF Core que l'entité a changé
-            // Au SaveChanges, EF Core génère un UPDATE pour toutes les propriétés
-            _context.Entry(transaction).State = EntityState.Modified;
+            // VÃ©rifier que la transaction appartient Ã  cet utilisateur
+            var existingTransaction = await _context.Transactions.FindAsync(id);
+            if (existingTransaction == null)
+            {
+                _logger.LogWarning("Transaction {Id} non trouvÃ©e", id);
+                return NotFound("Transaction non trouvÃ©e");
+            }
+            
+            if (existingTransaction.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "Tentative de modification non autorisÃ©e : Transaction {Id} appartient Ã  l'utilisateur {TransactionUserId}, pas Ã  {RequestedUserId}", 
+                    id, 
+                    existingTransaction.UserId, 
+                    userId
+                );
+                return Forbid();
+            }
+
+            // Mettre Ã  jour les propriÃ©tÃ©s de l'entitÃ© existante (dÃ©jÃ  trackÃ©e par EF Core)
+            // On ne crÃ©e PAS une nouvelle instance, on modifie celle qui est dÃ©jÃ  trackÃ©e
+            existingTransaction.Amount = transaction.Amount;
+            existingTransaction.Description = transaction.Description;
+            existingTransaction.Category = transaction.Category;
+            existingTransaction.Type = transaction.Type;
+            existingTransaction.Date = transaction.Date;
+            // On ne modifie PAS CreatedAt ni UserId
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Transaction {Id} mise à jour avec succès", id);
+            _logger.LogInformation("Transaction {Id} mise Ã  jour avec succÃ¨s", id);
 
-            // NoContent() retourne HTTP 204 (succès sans contenu)
+            // SYNCHRONISATION PATRIMOINE : Mettre Ã  jour automatiquement actifs/passifs
+            try
+            {
+                await _netWorthService.SyncTransactionImpactAsync(existingTransaction, TransactionOperation.Update);
+                _logger.LogInformation("Synchronisation patrimoine rÃ©ussie pour la modification de la transaction {Id}", id);
+            }
+            catch (Exception syncEx)
+            {
+                _logger.LogError(syncEx, "Erreur lors de la synchronisation patrimoine pour la transaction {Id}", id);
+                // On ne bloque pas la modification, mais on log l'erreur
+            }
+
+            // NoContent() retourne HTTP 204 (succÃ¨s sans contenu)
             return NoContent();
         }
         catch (DbUpdateConcurrencyException)
         {
-            // Exception levée si la transaction a été supprimée entre-temps
+            // Exception levÃ©e si la transaction a Ã©tÃ© supprimÃ©e entre-temps
             // (conflit de concurrence)
             if (!await TransactionExists(id))
             {
-                _logger.LogWarning("Transaction {Id} non trouvée lors de la mise à jour", id);
+                _logger.LogWarning("Transaction {Id} non trouvÃ©e lors de la mise Ã  jour", id);
                 return NotFound();
             }
 
@@ -281,8 +413,8 @@ public class TransactionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la mise à jour de la transaction {Id}", id);
-            return StatusCode(500, "Erreur lors de la mise à jour");
+            _logger.LogError(ex, "Erreur lors de la mise ï¿½ jour de la transaction {Id}", id);
+            return StatusCode(500, "Erreur lors de la mise ï¿½ jour");
         }
     }
 
@@ -290,37 +422,87 @@ public class TransactionsController : ControllerBase
     /// DELETE /api/transactions/{id}
     /// Supprime une transaction
     /// </summary>
-    /// <param name="id">ID de la transaction à supprimer</param>
+    /// <param name="id">ID de la transaction ï¿½ supprimer</param>
     /// <remarks>
-    /// [HttpDelete("{id}")] : Répond aux requêtes DELETE
+    /// [HttpDelete("{id}")] : Rï¿½pond aux requï¿½tes DELETE
     /// 
     /// PROCESSUS :
-    /// 1. Vérifier que la transaction existe
-    /// 2. Remove() marque l'entité pour suppression
-    /// 3. SaveChanges() génère DELETE en SQL
+    /// 1. Vï¿½rifier que la transaction existe
+    /// 2. Remove() marque l'entitï¿½ pour suppression
+    /// 3. SaveChanges() gï¿½nï¿½re DELETE en SQL
     /// </remarks>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTransaction(int id)
+    public async Task<IActionResult> DeleteTransaction(int id, [FromQuery] int userId)
     {
+        var tokenUserId = GetUserIdFromToken();
+        if (tokenUserId == null)
+        {
+            return Unauthorized("Token invalide");
+        }
+
+        if (userId <= 0)
+        {
+            userId = tokenUserId.Value;
+        }
+        else if (userId != tokenUserId.Value)
+        {
+            return Forbid();
+        }
+
         try
         {
-            _logger.LogInformation("Suppression de la transaction {Id}", id);
+            _logger.LogInformation("Suppression de la transaction {Id} pour l'utilisateur {UserId}", id, userId);
 
             var transaction = await _context.Transactions.FindAsync(id);
 
             if (transaction == null)
             {
-                _logger.LogWarning("Transaction {Id} non trouvée pour suppression", id);
+                _logger.LogWarning("Transaction {Id} non trouvÃ©e pour suppression par l'utilisateur {UserId}", id, userId);
                 return NotFound();
             }
 
-            // Remove() marque l'entité pour suppression
+            if (transaction.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "Tentative de suppression non autorisÃ©e : Transaction {Id} appartient Ã  l'utilisateur {TransactionUserId}, pas Ã  {RequestedUserId}",
+                    id,
+                    transaction.UserId,
+                    userId
+                );
+                return Forbid();
+            }
+
+            // VÃ©rifier que la transaction appartient Ã  cet utilisateur
+            if (transaction.UserId != userId)
+            {
+                _logger.LogWarning(
+                    "Tentative de suppression non autorisÃ©e : Transaction {Id} appartient Ã  l'utilisateur {TransactionUserId}, pas Ã  {RequestedUserId}", 
+                    id, 
+                    transaction.UserId, 
+                    userId
+                );
+                return Forbid();
+            }
+
+            // Remove() marque l'entitï¿½ pour suppression
             _context.Transactions.Remove(transaction);
 
-            // SaveChanges() exécute le DELETE
+            // SaveChanges() exï¿½cute le DELETE
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Transaction {Id} supprimée avec succès", id);
+            _logger.LogInformation("Transaction {Id} supprimï¿½e avec succï¿½s", id);
+
+            // SYNCHRONISATION PATRIMOINE : Mettre Ã  jour automatiquement actifs/passifs
+            try
+            {
+                await _netWorthService.SyncTransactionImpactAsync(transaction, TransactionOperation.Delete);
+                _logger.LogInformation("Synchronisation patrimoine rÃ©ussie pour la suppression de la transaction {Id}", id);
+            }
+            catch (Exception syncEx)
+            {
+                _logger.LogError(syncEx, "Erreur lors de la synchronisation patrimoine pour la transaction {Id}", id);
+                // La transaction est dÃ©jÃ  supprimÃ©e, on log juste l'erreur de sync
+            }
 
             return NoContent();
         }
@@ -332,13 +514,21 @@ public class TransactionsController : ControllerBase
     }
 
     /// <summary>
-    /// Méthode helper pour vérifier si une transaction existe
+    /// Mï¿½thode helper pour vï¿½rifier si une transaction existe
     /// </summary>
     private async Task<bool> TransactionExists(int id)
     {
-        // AnyAsync() : Requête optimisée qui retourne juste true/false
-        // Plus rapide que FindAsync() car ne charge pas les données
+        // AnyAsync() : Requï¿½te optimisï¿½e qui retourne juste true/false
+        // Plus rapide que FindAsync() car ne charge pas les donnï¿½es
         // SQL : SELECT EXISTS(SELECT 1 FROM "Transactions" WHERE "Id" = @id)
         return await _context.Transactions.AnyAsync(t => t.Id == id);
+    }
+
+    private int? GetUserIdFromToken()
+    {
+        var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        return int.TryParse(claimValue, out var userId) ? userId : null;
     }
 }

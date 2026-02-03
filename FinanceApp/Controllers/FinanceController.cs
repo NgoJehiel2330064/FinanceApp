@@ -1,45 +1,49 @@
+ï»¿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FinanceApp.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace FinanceApp.Controllers;
 
 /// <summary>
-/// Controller API REST pour les fonctionnalités financières avancées (IA)
+/// Controller API REST pour les fonctionnalitï¿½s financiï¿½res avancï¿½es (IA)
 /// </summary>
 /// <remarks>
-/// Ce controller gère les endpoints liés à l'intelligence artificielle :
-/// - Conseils financiers personnalisés
-/// - Analyse des habitudes de dépenses
-/// - Prédictions budgétaires
+/// Ce controller gï¿½re les endpoints liï¿½s ï¿½ l'intelligence artificielle :
+/// - Conseils financiers personnalisï¿½s
+/// - Analyse des habitudes de dï¿½penses
+/// - Prï¿½dictions budgï¿½taires
 /// 
 /// [ApiController] : Active les comportements API (validation auto, binding auto, etc.)
 /// [Route("api/[controller]")] : Route de base = /api/finance
 /// </remarks>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class FinanceController : ControllerBase
 {
     private readonly IGeminiService _geminiService;
     private readonly ILogger<FinanceController> _logger;
 
     /// <summary>
-    /// Constructeur avec injection de dépendances
+    /// Constructeur avec injection de dï¿½pendances
     /// </summary>
     /// <param name="geminiService">Service IA Gemini pour les analyses</param>
     /// <param name="logger">Service de logging</param>
     /// <remarks>
-    /// INJECTION DE DÉPENDANCES :
+    /// INJECTION DE Dï¿½PENDANCES :
     /// 
-    /// Quand une requête HTTP arrive sur /api/finance/advice :
+    /// Quand une requï¿½te HTTP arrive sur /api/finance/advice :
     /// 1. ASP.NET Core identifie le controller : FinanceController
-    /// 2. Regarde les paramètres du constructeur : IGeminiService, ILogger
-    /// 3. Cherche dans le conteneur DI (configuré dans Program.cs)
-    /// 4. Trouve les implémentations enregistrées :
+    /// 2. Regarde les paramï¿½tres du constructeur : IGeminiService, ILogger
+    /// 3. Cherche dans le conteneur DI (configurï¿½ dans Program.cs)
+    /// 4. Trouve les implï¿½mentations enregistrï¿½es :
     ///    - IGeminiService ? GeminiService (Scoped)
-    ///    - ILogger ? Service de logging intégré (Singleton)
-    /// 5. Instancie le controller avec ces dépendances
-    /// 6. Appelle la méthode d'action (GetFinancialAdvice)
-    /// 7. À la fin de la requête, dispose les services Scoped
+    ///    - ILogger ? Service de logging intï¿½grï¿½ (Singleton)
+    /// 5. Instancie le controller avec ces dï¿½pendances
+    /// 6. Appelle la mï¿½thode d'action (GetFinancialAdvice)
+    /// 7. ï¿½ la fin de la requï¿½te, dispose les services Scoped
     /// </remarks>
     public FinanceController(IGeminiService geminiService, ILogger<FinanceController> logger)
     {
@@ -49,11 +53,11 @@ public class FinanceController : ControllerBase
 
     /// <summary>
     /// GET /api/finance/advice
-    /// Obtient un conseil financier personnalisé basé sur l'analyse IA des transactions
+    /// Obtient un conseil financier personnalisï¿½ basï¿½ sur l'analyse IA des transactions
     /// </summary>
-    /// <returns>Conseil financier généré par Gemini (15 mots max)</returns>
+    /// <returns>Conseil financier gï¿½nï¿½rï¿½ par Gemini (15 mots max)</returns>
     /// <remarks>
-    /// FLUX COMPLET DE LA DONNÉE (Request ? Database ? IA ? Response) :
+    /// FLUX COMPLET DE LA DONNï¿½E (Request ? Database ? IA ? Response) :
     /// 
     /// ???????????????????????????????????????????????????????????????????
     /// ? 1. CLIENT (Frontend React/Postman)                             ?
@@ -63,15 +67,15 @@ public class FinanceController : ControllerBase
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 2. KESTREL (Serveur Web ASP.NET Core)                          ?
-    /// ?    ? Reçoit la requête HTTP                                     ?
+    /// ?    ? Reï¿½oit la requï¿½te HTTP                                     ?
     /// ?    ? Passe au pipeline middleware                               ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ?
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 3. MIDDLEWARE PIPELINE (Program.cs)                             ?
-    /// ?    ? CORS : Vérifie l'origine (localhost:3000 autorisé)        ?
-    /// ?    ? Authorization : Vérifie les permissions (pour l'instant ?) ?
+    /// ?    ? CORS : Vï¿½rifie l'origine (localhost:3000 autorisï¿½)        ?
+    /// ?    ? Authorization : Vï¿½rifie les permissions (pour l'instant ?) ?
     /// ?    ? Routing : Trouve le controller correspondant              ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ?
@@ -87,7 +91,7 @@ public class FinanceController : ControllerBase
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 5. CONTROLLER (FinanceController.GetFinancialAdvice)            ?
-    /// ?    ? Log : "Demande de conseil financier reçue"                ?
+    /// ?    ? Log : "Demande de conseil financier reï¿½ue"                ?
     /// ?    ? Appelle : _geminiService.GetFinancialAdvice()             ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ?
@@ -100,15 +104,15 @@ public class FinanceController : ControllerBase
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 7. ENTITY FRAMEWORK CORE (ApplicationDbContext)                 ?
-    /// ?    ? Génère le SQL : SELECT * FROM "Transactions"              ?
-    /// ?    ? Passe à Npgsql                                             ?
+    /// ?    ? Gï¿½nï¿½re le SQL : SELECT * FROM "Transactions"              ?
+    /// ?    ? Passe ï¿½ Npgsql                                             ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ?
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 8. NPGSQL (Driver PostgreSQL)                                   ?
-    /// ?    ? Encode la requête en protocole PostgreSQL                  ?
-    /// ?    ? Envoie via TCP/IP à localhost:5432                        ?
+    /// ?    ? Encode la requï¿½te en protocole PostgreSQL                  ?
+    /// ?    ? Envoie via TCP/IP ï¿½ localhost:5432                        ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ? TCP/IP
     ///                       ?
@@ -121,10 +125,10 @@ public class FinanceController : ControllerBase
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 10. POSTGRESQL (Conteneur Docker)                               ?
-    /// ?    ? Exécute la requête SQL                                     ?
+    /// ?    ? Exï¿½cute la requï¿½te SQL                                     ?
     /// ?    ? Retourne les lignes de la table "Transactions"            ?
     /// ???????????????????????????????????????????????????????????????????
-    ///                       ? Résultats SQL
+    ///                       ? Rï¿½sultats SQL
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 11. FLUX RETOUR : PostgreSQL ? Docker ? Npgsql ? EF Core       ?
@@ -134,8 +138,8 @@ public class FinanceController : ControllerBase
     ///                       ?
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
-    /// ? 12. GEMINI SERVICE (Analyse des données)                        ?
-    /// ?    ? Calcule : revenus, dépenses, balance, top catégorie       ?
+    /// ? 12. GEMINI SERVICE (Analyse des donnï¿½es)                        ?
+    /// ?    ? Calcule : revenus, dï¿½penses, balance, top catï¿½gorie       ?
     /// ?    ? Construit un prompt pour Gemini                            ?
     /// ?    ? Appelle : CallGeminiApiAsync()                             ?
     /// ???????????????????????????????????????????????????????????????????
@@ -150,80 +154,95 @@ public class FinanceController : ControllerBase
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 14. SERVEURS GOOGLE (API Gemini)                                ?
-    /// ?    ? Reçoit le prompt                                           ?
-    /// ?    ? Exécute le modèle d'IA (gemini-1.5-flash)                 ?
-    /// ?    ? Génère un conseil financier (15 mots max)                 ?
+    /// ?    ? Reï¿½oit le prompt                                           ?
+    /// ?    ? Exï¿½cute le modï¿½le d'IA (gemini-1.5-flash)                 ?
+    /// ?    ? Gï¿½nï¿½re un conseil financier (15 mots max)                 ?
     /// ?    ? Retourne JSON : { candidates: [{ content: ... }] }        ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ? HTTPS Response
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
-    /// ? 15. GEMINI SERVICE (Parse la réponse)                           ?
+    /// ? 15. GEMINI SERVICE (Parse la rï¿½ponse)                           ?
     /// ?    ? Parse le JSON                                              ?
-    /// ?    ? Extrait le texte généré                                    ?
+    /// ?    ? Extrait le texte gï¿½nï¿½rï¿½                                    ?
     /// ?    ? Retourne le conseil au Controller                         ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ?
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 16. CONTROLLER (GetFinancialAdvice)                             ?
-    /// ?    ? Reçoit le conseil du GeminiService                         ?
+    /// ?    ? Reï¿½oit le conseil du GeminiService                         ?
     /// ?    ? Retourne : Ok(new { advice = "..." })                     ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ?
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
-    /// ? 17. MIDDLEWARE PIPELINE (Remontée)                              ?
-    /// ?    ? Sérialise l'objet en JSON                                  ?
+    /// ? 17. MIDDLEWARE PIPELINE (Remontï¿½e)                              ?
+    /// ?    ? Sï¿½rialise l'objet en JSON                                  ?
     /// ?    ? Ajoute les headers CORS                                    ?
-    /// ?    ? Génère la réponse HTTP 200 OK                             ?
+    /// ?    ? Gï¿½nï¿½re la rï¿½ponse HTTP 200 OK                             ?
     /// ???????????????????????????????????????????????????????????????????
     ///                       ? HTTP Response
     ///                       ?
     /// ???????????????????????????????????????????????????????????????????
     /// ? 18. CLIENT (Frontend React/Postman)                             ?
-    /// ?    ? Reçoit : { "advice": "Réduisez vos dépenses..." }        ?
-    /// ?    ? Affiche le conseil à l'utilisateur                        ?
+    /// ?    ? Reï¿½oit : { "advice": "Rï¿½duisez vos dï¿½penses..." }        ?
+    /// ?    ? Affiche le conseil ï¿½ l'utilisateur                        ?
     /// ???????????????????????????????????????????????????????????????????
     /// 
-    /// EXEMPLE DE RÉPONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// {
-    ///   "advice": "Réduisez vos dépenses en alimentation de 20% pour économiser 100€ mensuels."
+    ///   "advice": "Rï¿½duisez vos dï¿½penses en alimentation de 20% pour ï¿½conomiser 100ï¿½ mensuels."
     /// }
     /// 
     /// CODES HTTP POSSIBLES :
-    /// - 200 OK : Conseil généré avec succès
-    /// - 500 Internal Server Error : Erreur serveur (base de données, API Gemini, etc.)
+    /// - 200 OK : Conseil gï¿½nï¿½rï¿½ avec succï¿½s
+    /// - 500 Internal Server Error : Erreur serveur (base de donnï¿½es, API Gemini, etc.)
     /// </remarks>
     [HttpGet("advice")]
-    public async Task<ActionResult<object>> GetFinancialAdvice()
+    public async Task<ActionResult<object>> GetFinancialAdvice([FromQuery] int userId)
     {
         try
         {
-            // Log de la requête entrante
-            _logger.LogInformation("Demande de conseil financier reçue");
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            // Log de la requ?te entrante
+            _logger.LogInformation("Demande de conseil financier re?ue pour l'utilisateur {UserId}", userId);
 
             // ================================================================
             // APPEL DU SERVICE GEMINI
             // ================================================================
-            // GetFinancialAdvice() déclenche tout le flux décrit ci-dessus :
-            // 1. Récupération des transactions depuis PostgreSQL
-            // 2. Analyse des données financières
+            // GetFinancialAdvice() d?clenche tout le flux d?crit ci-dessus :
+            // 1. R?cup?ration des transactions depuis PostgreSQL
+            // 2. Analyse des donn?es financi?res
             // 3. Construction du prompt
-            // 4. Appel à l'API Gemini
-            // 5. Parsing de la réponse
+            // 4. Appel ? l'API Gemini
+            // 5. Parsing de la r?ponse
             // 6. Retour du conseil
-            var advice = await _geminiService.GetFinancialAdvice();
+            var advice = await _geminiService.GetFinancialAdvice(userId);
 
-            _logger.LogInformation("Conseil généré : {Advice}", advice);
+            _logger.LogInformation("Conseil gï¿½nï¿½rï¿½ : {Advice}", advice);
 
             // ================================================================
-            // RETOUR DE LA RÉPONSE
+            // RETOUR DE LA Rï¿½PONSE
             // ================================================================
             // Ok() : Retourne HTTP 200 avec un objet JSON
-            // L'objet anonyme { advice = "..." } est automatiquement sérialisé en JSON
+            // L'objet anonyme { advice = "..." } est automatiquement sï¿½rialisï¿½ en JSON
             // 
-            // Réponse HTTP :
+            // Rï¿½ponse HTTP :
             // Status: 200 OK
             // Content-Type: application/json
             // Body: { "advice": "texte du conseil..." }
@@ -231,14 +250,14 @@ public class FinanceController : ControllerBase
         }
         catch (Exception ex)
         {
-            // En cas d'erreur (base de données inaccessible, API Gemini down, etc.)
-            _logger.LogError(ex, "Erreur lors de la génération du conseil financier");
+            // En cas d'erreur (base de donnï¿½es inaccessible, API Gemini down, etc.)
+            _logger.LogError(ex, "Erreur lors de la gï¿½nï¿½ration du conseil financier");
 
             // StatusCode(500) : Retourne HTTP 500 Internal Server Error
             // Avec un message d'erreur pour le frontend
             return StatusCode(500, new 
             { 
-                error = "Impossible de générer un conseil pour le moment.",
+                error = "Impossible de gï¿½nï¿½rer un conseil pour le moment.",
                 details = ex.Message 
             });
         }
@@ -246,45 +265,56 @@ public class FinanceController : ControllerBase
 
     /// <summary>
     /// POST /api/finance/suggest-category
-    /// Suggère une catégorie pour une transaction basée sur sa description et son montant
+    /// Suggï¿½re une catï¿½gorie pour une transaction basï¿½e sur sa description et son montant
     /// </summary>
-    /// <param name="request">Données de la transaction (description + montant)</param>
-    /// <returns>Nom de la catégorie suggérée par l'IA</returns>
+    /// <param name="request">Donnï¿½es de la transaction (description + montant)</param>
+    /// <returns>Nom de la catï¿½gorie suggï¿½rï¿½e par l'IA</returns>
     /// <remarks>
-    /// EXEMPLE DE REQUÊTE :
+    /// EXEMPLE DE REQUï¿½TE :
     /// POST /api/finance/suggest-category
     /// {
     ///   "description": "Courses Lidl",
     ///   "amount": 45.80
     /// }
     /// 
-    /// EXEMPLE DE RÉPONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// {
     ///   "category": "Alimentation"
     /// }
     /// 
-    /// CATÉGORIES POSSIBLES :
+    /// CATï¿½GORIES POSSIBLES :
     /// - Alimentation
     /// - Transport
     /// - Logement
     /// - Loisirs
-    /// - Santé
-    /// - Éducation
-    /// - Vêtements
+    /// - Santï¿½
+    /// - ï¿½ducation
+    /// - Vï¿½tements
     /// - Technologie
     /// - Services
     /// - Autres
     /// </remarks>
     [HttpPost("suggest-category")]
-    public async Task<ActionResult<object>> SuggestCategory([FromBody] CategorySuggestionRequest request)
+    public async Task<ActionResult<object>> SuggestCategory([FromQuery] int userId, [FromBody] CategorySuggestionRequest request)
     {
         try
         {
-            _logger.LogInformation(
-                "Demande de suggestion de catégorie : '{Description}', {Amount}€",
-                request.Description,
-                request.Amount
-            );
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("Demande de suggestion de categorie pour l'utilisateur {UserId} : '{Description}', {Amount}", userId, request.Description, request.Amount);
 
             // Validation
             if (string.IsNullOrWhiteSpace(request.Description))
@@ -294,22 +324,22 @@ public class FinanceController : ControllerBase
 
             if (request.Amount <= 0)
             {
-                return BadRequest(new { error = "Le montant doit être positif" });
+                return BadRequest(new { error = "Le montant doit ï¿½tre positif" });
             }
 
             // Appel au service IA
-            var category = await _geminiService.SuggestCategoryAsync(request.Description, request.Amount);
+            var category = await _geminiService.SuggestCategoryAsync(userId, request.Description, request.Amount);
 
-            _logger.LogInformation("Catégorie suggérée : {Category}", category);
+            _logger.LogInformation("Catï¿½gorie suggï¿½rï¿½e : {Category}", category);
 
             return Ok(new { category });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la suggestion de catégorie");
+            _logger.LogError(ex, "Erreur lors de la suggestion de catï¿½gorie");
             return StatusCode(500, new 
             { 
-                error = "Impossible de suggérer une catégorie pour le moment.",
+                error = "Impossible de suggï¿½rer une catï¿½gorie pour le moment.",
                 details = ex.Message 
             });
         }
@@ -317,111 +347,199 @@ public class FinanceController : ControllerBase
 
     /// <summary>
     /// GET /api/finance/summary
-    /// Génère un résumé financier personnalisé pour une période donnée
+    /// Gï¿½nï¿½re un rï¿½sumï¿½ financier personnalisï¿½ pour une pï¿½riode donnï¿½e
     /// </summary>
-    /// <param name="startDate">Date de début (format ISO 8601)</param>
+    /// <param name="startDate">Date de dï¿½but (format ISO 8601)</param>
     /// <param name="endDate">Date de fin (format ISO 8601)</param>
-    /// <returns>Résumé financier généré par l'IA</returns>
+    /// <returns>Rï¿½sumï¿½ financier gï¿½nï¿½rï¿½ par l'IA</returns>
     /// <remarks>
-    /// EXEMPLE DE REQUÊTE :
+    /// EXEMPLE DE REQUï¿½TE :
     /// GET /api/finance/summary?startDate=2025-01-01&endDate=2025-01-31
     /// 
-    /// EXEMPLE DE RÉPONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// {
-    ///   "summary": "En janvier, vous avez économisé 15% de vos revenus. Vos dépenses en Alimentation sont sous contrôle. Continuez ainsi !"
+    ///   "summary": "En janvier, vous avez ï¿½conomisï¿½ 15% de vos revenus. Vos dï¿½penses en Alimentation sont sous contrï¿½le. Continuez ainsi !"
     /// }
     /// 
-    /// UTILITÉ :
+    /// UTILITï¿½ :
     /// - Rapport mensuel automatique
     /// - Dashboard avec KPIs
-    /// - Analyse de période personnalisée
+    /// - Analyse de pï¿½riode personnalisï¿½e
     /// </remarks>
     [HttpGet("summary")]
     public async Task<ActionResult<object>> GetFinancialSummary(
+        [FromQuery] int userId,
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
         try
         {
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
             _logger.LogInformation(
-                "Demande de résumé financier : {StartDate} - {EndDate}",
+                "Demande de rÃ©sumÃ© financier : {StartDate} - {EndDate}",
                 startDate,
                 endDate
             );
 
-            // Validation
+            // Validation amÃ©liorÃ©e avec plus de tolÃ©rance
             if (startDate >= endDate)
             {
-                return BadRequest(new { error = "La date de début doit être antérieure à la date de fin" });
+                _logger.LogWarning("Validation Ã©chouÃ©e: startDate >= endDate");
+                return BadRequest(new { error = "La date de dÃ©but doit Ãªtre antÃ©rieure Ã  la date de fin" });
             }
 
-            if (endDate > DateTime.Now)
+            // Convertir les dates en UTC pour comparaison prÃ©cise
+            var nowUtc = DateTime.UtcNow;
+            var endDateUtc = endDate.ToUniversalTime();
+            
+            // TolÃ©rance de 10 minutes au lieu de 1 pour gÃ©rer les dÃ©synchronisations d'horloge
+            if (endDateUtc > nowUtc.AddMinutes(10))
             {
-                return BadRequest(new { error = "La date de fin ne peut pas être dans le futur" });
+                _logger.LogWarning(
+                    "Validation Ã©chouÃ©e: endDate dans le futur. Now={Now}, EndDate={EndDate}, DiffÃ©rence={Diff} minutes",
+                    nowUtc,
+                    endDateUtc,
+                    (endDateUtc - nowUtc).TotalMinutes
+                );
+                return BadRequest(new { 
+                    error = "La date de fin ne peut pas Ãªtre dans le futur",
+                    details = $"Date de fin reÃ§ue: {endDateUtc:O}, Heure serveur: {nowUtc:O}"
+                });
             }
 
             // Appel au service IA
-            var summary = await _geminiService.GenerateFinancialSummaryAsync(startDate, endDate);
+            var summary = await _geminiService.GenerateFinancialSummaryAsync(userId, startDate, endDate);
 
-            _logger.LogInformation("Résumé généré : {Summary}", summary);
+            _logger.LogInformation("RÃ©sumÃ© gÃ©nÃ©rÃ© avec succÃ¨s: {Summary}", summary?.Substring(0, Math.Min(50, summary?.Length ?? 0)));
 
             return Ok(new { summary });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la génération du résumé financier");
+            _logger.LogError(ex, "Erreur lors de la gÃ©nÃ©ration du rÃ©sumÃ© financier");
             return StatusCode(500, new 
             { 
-                error = "Impossible de générer un résumé pour le moment.",
+                error = "Impossible de gÃ©nÃ©rer un rÃ©sumÃ© pour le moment.",
                 details = ex.Message 
             });
         }
     }
 
     /// <summary>
-    /// GET /api/finance/anomalies
-    /// Détecte les anomalies dans les transactions (dépenses inhabituelles)
+    /// POST /api/finance/chat
+    /// Chat conversationnel IA avec contexte utilisateur
     /// </summary>
-    /// <returns>Liste des anomalies détectées</returns>
+    [HttpPost("chat")]
+    public async Task<ActionResult<object>> Chat([FromBody] ChatRequest request)
+    {
+        try
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Message))
+            {
+                return BadRequest(new { error = "Le message est requis" });
+            }
+
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            var userId = request.UserId <= 0 ? tokenUserId.Value : request.UserId;
+            if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            var context = request.Context ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(request.Page))
+            {
+                context = $"Page: {request.Page}\n" + context;
+            }
+
+            var reply = await _geminiService.GetChatResponseAsync(userId, request.Message, context);
+            return Ok(new { reply });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors du chat IA");
+            return StatusCode(500, new { error = "Impossible de traiter votre demande pour le moment." });
+        }
+    }
+
+    /// <summary>
+    /// GET /api/finance/anomalies
+    /// Dï¿½tecte les anomalies dans les transactions (dï¿½penses inhabituelles)
+    /// </summary>
+    /// <returns>Liste des anomalies dï¿½tectï¿½es</returns>
     /// <remarks>
-    /// EXEMPLE DE RÉPONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// {
     ///   "anomalies": [
-    ///     "Dépense inhabituelle : 450€ en Loisirs le 15/02 (moyenne: 80€, écart: +462%)",
-    ///     "Pic de dépenses Alimentation : +40% par rapport au mois dernier"
+    ///     "Dï¿½pense inhabituelle : 450ï¿½ en Loisirs le 15/02 (moyenne: 80ï¿½, ï¿½cart: +462%)",
+    ///     "Pic de dï¿½penses Alimentation : +40% par rapport au mois dernier"
     ///   ]
     /// }
     /// 
     /// ALGORITHME :
-    /// - Calcule la moyenne par catégorie
-    /// - Détecte les écarts > 50% de la moyenne
-    /// - Enrichit avec des alertes générées par Gemini
+    /// - Calcule la moyenne par catï¿½gorie
+    /// - Dï¿½tecte les ï¿½carts > 50% de la moyenne
+    /// - Enrichit avec des alertes gï¿½nï¿½rï¿½es par Gemini
     /// 
-    /// UTILITÉ :
-    /// - Détection de fraude
+    /// UTILITï¿½ :
+    /// - Dï¿½tection de fraude
     /// - Alertes automatiques
-    /// - Suivi des habitudes de dépenses
+    /// - Suivi des habitudes de dï¿½penses
     /// </remarks>
     [HttpGet("anomalies")]
-    public async Task<ActionResult<object>> DetectAnomalies()
+    public async Task<ActionResult<object>> DetectAnomalies([FromQuery] int userId)
     {
         try
         {
-            _logger.LogInformation("Demande de détection d'anomalies");
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("Demande de d?tection d'anomalies pour l'utilisateur {UserId}", userId);
 
             // Appel au service IA
-            var anomalies = await _geminiService.DetectAnomaliesAsync();
+            var anomalies = await _geminiService.DetectAnomaliesAsync(userId);
 
-            _logger.LogInformation("Détection terminée : {Count} anomalie(s)", anomalies.Count);
+            _logger.LogInformation("Dï¿½tection terminï¿½e : {Count} anomalie(s)", anomalies.Count);
 
             return Ok(new { anomalies });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la détection d'anomalies");
+            _logger.LogError(ex, "Erreur lors de la dï¿½tection d'anomalies");
             return StatusCode(500, new 
             { 
-                error = "Impossible de détecter les anomalies pour le moment.",
+                error = "Impossible de dï¿½tecter les anomalies pour le moment.",
                 details = ex.Message 
             });
         }
@@ -429,55 +547,70 @@ public class FinanceController : ControllerBase
 
     /// <summary>
     /// GET /api/finance/predict
-    /// Prédit le budget futur basé sur les tendances historiques
+    /// Prï¿½dit le budget futur basï¿½ sur les tendances historiques
     /// </summary>
-    /// <param name="monthsAhead">Nombre de mois à prédire (1-12)</param>
-    /// <returns>Prédiction budgétaire générée par l'IA</returns>
+    /// <param name="monthsAhead">Nombre de mois ï¿½ prï¿½dire (1-12)</param>
+    /// <returns>Prï¿½diction budgï¿½taire gï¿½nï¿½rï¿½e par l'IA</returns>
     /// <remarks>
-    /// EXEMPLE DE REQUÊTE :
+    /// EXEMPLE DE REQUï¿½TE :
     /// GET /api/finance/predict?monthsAhead=3
     /// 
-    /// EXEMPLE DE RÉPONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// {
-    ///   "prediction": "Basé sur vos habitudes, vous économiserez environ 600€ dans 3 mois. Maintenez vos efforts d'épargne !"
+    ///   "prediction": "Basï¿½ sur vos habitudes, vous ï¿½conomiserez environ 600ï¿½ dans 3 mois. Maintenez vos efforts d'ï¿½pargne !"
     /// }
     /// 
     /// ALGORITHME :
     /// - Analyse des 3 derniers mois
     /// - Calcul des moyennes et tendances
-    /// - Prédiction par Gemini avec contexte
+    /// - Prï¿½diction par Gemini avec contexte
     /// 
-    /// UTILITÉ :
-    /// - Planification budgétaire
-    /// - Objectifs d'épargne
-    /// - Motivation financière
+    /// UTILITï¿½ :
+    /// - Planification budgï¿½taire
+    /// - Objectifs d'ï¿½pargne
+    /// - Motivation financiï¿½re
     /// </remarks>
     [HttpGet("predict")]
-    public async Task<ActionResult<object>> PredictBudget([FromQuery] int monthsAhead = 3)
+    public async Task<ActionResult<object>> PredictBudget([FromQuery] int userId, [FromQuery] int monthsAhead = 3)
     {
         try
         {
-            _logger.LogInformation("Demande de prédiction de budget : {Months} mois", monthsAhead);
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("Demande de pr?diction de budget pour l'utilisateur {UserId} : {Months} mois", userId, monthsAhead);
 
             // Validation
             if (monthsAhead <= 0 || monthsAhead > 12)
             {
-                return BadRequest(new { error = "Le nombre de mois doit être entre 1 et 12" });
+                return BadRequest(new { error = "Le nombre de mois doit ?tre entre 1 et 12" });
             }
 
             // Appel au service IA
-            var prediction = await _geminiService.PredictBudgetAsync(monthsAhead);
+            var prediction = await _geminiService.PredictBudgetAsync(userId, monthsAhead);
 
-            _logger.LogInformation("Prédiction générée : {Prediction}", prediction);
+            _logger.LogInformation("Prï¿½diction gï¿½nï¿½rï¿½e : {Prediction}", prediction);
 
             return Ok(new { prediction });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la prédiction de budget");
+            _logger.LogError(ex, "Erreur lors de la prï¿½diction de budget");
             return StatusCode(500, new 
             { 
-                error = "Impossible de générer une prédiction pour le moment.",
+                error = "Impossible de gï¿½nï¿½rer une prï¿½diction pour le moment.",
                 details = ex.Message 
             });
         }
@@ -485,68 +618,277 @@ public class FinanceController : ControllerBase
 
     /// <summary>
     /// GET /api/finance/portfolio-insights
-    /// Analyse le patrimoine global et génère des insights stratégiques personnalisés
+    /// Analyse le patrimoine global et gï¿½nï¿½re des insights stratï¿½giques personnalisï¿½s
     /// </summary>
-    /// <returns>3 insights patrimoniaux générés par l'IA</returns>
+    /// <returns>3 insights patrimoniaux gï¿½nï¿½rï¿½s par l'IA</returns>
     /// <remarks>
-    /// EXEMPLE DE REQUÊTE :
+    /// EXEMPLE DE REQUï¿½TE :
     /// GET /api/finance/portfolio-insights
     /// 
-    /// EXEMPLE DE RÉPONSE :
+    /// EXEMPLE DE Rï¿½PONSE :
     /// {
     ///   "insights": [
-    ///     "Votre patrimoine est fortement concentré en immobilier (70%), ce qui limite la liquidité et la diversification.",
-    ///     "Vos revenus mensuels (3200 CAD) représentent seulement 0.7% de la valeur de vos actifs, un ratio faible.",
+    ///     "Votre patrimoine est fortement concentrï¿½ en immobilier (70%), ce qui limite la liquiditï¿½ et la diversification.",
+    ///     "Vos revenus mensuels (3200 CAD) reprï¿½sentent seulement 0.7% de la valeur de vos actifs, un ratio faible.",
     ///     "Seulement 20% de votre patrimoine est investi dans des actifs productifs (investissements)."
     ///   ]
     /// }
     /// 
     /// ALGORITHME :
-    /// 1. Récupère tous les assets et transactions
+    /// 1. Rï¿½cupï¿½re tous les assets et transactions
     /// 2. Calcule :
-    ///    - Valeur totale et répartition par type
-    ///    - Revenus/dépenses mensuels moyens
+    ///    - Valeur totale et rï¿½partition par type
+    ///    - Revenus/dï¿½penses mensuels moyens
     ///    - Ratio revenus/patrimoine
     ///    - % d'assets productifs
-    /// 3. Génère 3 insights via Gemini
+    /// 3. Gï¿½nï¿½re 3 insights via Gemini
     /// 
-    /// UTILITÉ :
+    /// UTILITï¿½ :
     /// - Dashboard patrimonial
     /// - Analyse de diversification
-    /// - Conseils stratégiques
+    /// - Conseils stratï¿½giques
     /// - Suivi de la structure du patrimoine
     /// </remarks>
     [HttpGet("portfolio-insights")]
-    public async Task<ActionResult<object>> GetPortfolioInsights()
+    public async Task<ActionResult<object>> GetPortfolioInsights([FromQuery] int userId)
     {
         try
         {
-            _logger.LogInformation("Demande d'insights patrimoniaux");
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("Demande d'insights patrimoniaux pour l'utilisateur {UserId}", userId);
 
             // Appel au service IA
-            var insights = await _geminiService.GetPortfolioInsightsAsync();
+            var insights = await _geminiService.GetPortfolioInsightsAsync(userId);
 
-            _logger.LogInformation("Insights générés : {Count} insight(s)", insights.Count);
+            _logger.LogInformation("Insights gï¿½nï¿½rï¿½s : {Count} insight(s)", insights.Count);
 
             return Ok(new { insights });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la génération d'insights patrimoniaux");
+            _logger.LogError(ex, "Erreur lors de la gï¿½nï¿½ration d'insights patrimoniaux");
             return StatusCode(500, new 
             { 
-                error = "Impossible de générer des insights pour le moment.",
+                error = "Impossible de gï¿½nï¿½rer des insights pour le moment.",
                 details = ex.Message 
             });
         }
     }
+
+    /// <summary>
+    /// GET /api/finance/spending-patterns
+    /// Analyse les patterns de dÃ©penses de l'utilisateur
+    /// </summary>
+    /// <param name="userId">ID de l'utilisateur</param>
+    /// <param name="monthsToAnalyze">Nombre de mois Ã  analyser (dÃ©faut: 3)</param>
+    /// <returns>Patterns de dÃ©penses avec catÃ©gories, tendances, etc.</returns>
+    [HttpGet("spending-patterns")]
+    public async Task<ActionResult<object>> GetSpendingPatterns(
+        [FromQuery] int userId,
+        [FromQuery] int monthsToAnalyze = 3)
+    {
+        try
+        {
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("Analyse des patterns de dÃ©penses pour l'utilisateur {UserId}", userId);
+
+            var advancedAnalytics = HttpContext.RequestServices.GetRequiredService<IAdvancedAnalyticsService>();
+            var patterns = await advancedAnalytics.AnalyzeSpendingPatternsAsync(userId, monthsToAnalyze);
+
+            _logger.LogInformation("Patterns analysÃ©s : {TotalTransactions} transactions", patterns.TotalTransactions);
+
+            return Ok(new
+            {
+                patterns.TotalTransactions,
+                patterns.TotalSpent,
+                patterns.AverageMonthlySpending,
+                patterns.HighestSpendingMonth,
+                patterns.LowestSpendingMonth,
+                patterns.SpendingVariance,
+                patterns.TrendDirection,
+                patterns.MostSpentCategory,
+                Categories = patterns.Categories.Select(c => new
+                {
+                    c.Value.Category,
+                    c.Value.TotalSpent,
+                    c.Value.TransactionCount,
+                    c.Value.AverageTransaction,
+                    c.Value.Percentage,
+                    c.Value.IsRecurring
+                }).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de l'analyse des patterns de dÃ©penses");
+            return StatusCode(500, new
+            {
+                error = "Impossible d'analyser les patterns de dÃ©penses.",
+                details = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// GET /api/finance/smart-anomalies
+    /// DÃ©tecte les anomalies avec analyse avancÃ©e (amÃ©lioration de /anomalies)
+    /// </summary>
+    /// <param name="userId">ID de l'utilisateur</param>
+    /// <returns>Rapport d'anomalies dÃ©tectÃ©es avec patterns</returns>
+    [HttpGet("smart-anomalies")]
+    public async Task<ActionResult<object>> GetSmartAnomalies([FromQuery] int userId)
+    {
+        try
+        {
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("DÃ©tection intelligente d'anomalies pour l'utilisateur {UserId}", userId);
+
+            var advancedAnalytics = HttpContext.RequestServices.GetRequiredService<IAdvancedAnalyticsService>();
+            var anomalies = await advancedAnalytics.DetectAnomaliesAsync(userId);
+
+            _logger.LogInformation("Anomalies dÃ©tectÃ©es : {Count}", anomalies.TotalAnomalies);
+
+            return Ok(new
+            {
+                anomalies.TotalAnomalies,
+                anomalies.HighSeverityCount,
+                anomalies.MediumSeverityCount,
+                anomalies.LowSeverityCount,
+                anomalies.HasCriticalAnomalies,
+                anomalies.Anomalies
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la dÃ©tection intelligente d'anomalies");
+            return StatusCode(500, new
+            {
+                error = "Impossible de dÃ©tecter les anomalies.",
+                details = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// GET /api/finance/recommendations
+    /// GÃ©nÃ¨re des recommandations personnalisÃ©es basÃ©es sur les patterns et anomalies
+    /// </summary>
+    /// <param name="userId">ID de l'utilisateur</param>
+    /// <returns>Liste de recommandations prioritaires</returns>
+    [HttpGet("recommendations")]
+    public async Task<ActionResult<object>> GetRecommendations([FromQuery] int userId)
+    {
+        try
+        {
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+            {
+                return Unauthorized(new { message = "Token invalide" });
+            }
+
+            if (userId <= 0)
+            {
+                userId = tokenUserId.Value;
+            }
+            else if (userId != tokenUserId.Value)
+            {
+                return Forbid();
+            }
+
+            _logger.LogInformation("GÃ©nÃ©ration des recommandations pour l'utilisateur {UserId}", userId);
+
+            var advancedAnalytics = HttpContext.RequestServices.GetRequiredService<IAdvancedAnalyticsService>();
+            var recommendations = await advancedAnalytics.GenerateRecommendationsAsync(userId);
+
+            _logger.LogInformation("Recommandations gÃ©nÃ©rÃ©es : {Count}", recommendations.Count);
+
+            return Ok(new { recommendations });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la gÃ©nÃ©ration des recommandations");
+            return StatusCode(500, new
+            {
+                error = "Impossible de gÃ©nÃ©rer les recommandations.",
+                details = ex.Message
+            });
+        }
+    }
+
+    private int? GetUserIdFromToken()
+    {
+        var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        return int.TryParse(claimValue, out var userId) ? userId : null;
+    }
 }
 
 /// <summary>
-/// DTO pour la requête de suggestion de catégorie
+/// DTO pour la requï¿½te de suggestion de catï¿½gorie
 /// </summary>
 public class CategorySuggestionRequest
 {
     public string Description { get; set; } = string.Empty;
     public decimal Amount { get; set; }
 }
+
+/// <summary>
+/// DTO pour le chat IA
+/// </summary>
+public class ChatRequest
+{
+    public int UserId { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public string? Context { get; set; }
+    public string? Page { get; set; }
+}
+
+
+
+
+
+
+

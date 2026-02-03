@@ -1,67 +1,77 @@
-namespace FinanceApp.Services;
+ï»¿namespace FinanceApp.Services;
 
 /// <summary>
-/// Interface pour le service d'intégration avec l'IA Gemini
+/// Interface pour le service d'intï¿½gration avec l'IA Gemini
 /// </summary>
 public interface IGeminiService
 {
     /// <summary>
-    /// Génère un conseil financier basé sur l'analyse de toutes les transactions
+    /// Gï¿½nï¿½re un conseil financier basï¿½ sur l'analyse de toutes les transactions
     /// </summary>
     /// <returns>Conseil financier court (15 mots maximum)</returns>
     /// <remarks>
-    /// Cette méthode :
-    /// 1. Récupère toutes les transactions depuis PostgreSQL
-    /// 2. Analyse les données (revenus, dépenses, catégories)
+    /// Cette mï¿½thode :
+    /// 1. Rï¿½cupï¿½re toutes les transactions depuis PostgreSQL
+    /// 2. Analyse les donnï¿½es (revenus, dï¿½penses, catï¿½gories)
     /// 3. Construit un prompt intelligent pour Gemini
-    /// 4. Appelle l'API Gemini pour générer un conseil
+    /// 4. Appelle l'API Gemini pour gï¿½nï¿½rer un conseil
     /// 5. Retourne le conseil en texte court
     /// </remarks>
-    Task<string> GetFinancialAdvice();
+    Task<string> GetFinancialAdvice(int userId);
 
     /// <summary>
-    /// Analyse une transaction et suggère une catégorie avec l'IA
+    /// Analyse une transaction et suggï¿½re une catï¿½gorie avec l'IA
     /// </summary>
     /// <param name="description">Description de la transaction</param>
     /// <param name="amount">Montant de la transaction</param>
-    /// <returns>Catégorie suggérée par l'IA</returns>
-    Task<string> SuggestCategoryAsync(string description, decimal amount);
+    /// <returns>Catï¿½gorie suggï¿½rï¿½e par l'IA</returns>
+    Task<string> SuggestCategoryAsync(int userId, string description, decimal amount);
 
     /// <summary>
-    /// Génère un résumé financier intelligent des transactions
+    /// Gï¿½nï¿½re un rï¿½sumï¿½ financier intelligent des transactions
     /// </summary>
-    /// <param name="startDate">Date de début de la période</param>
-    /// <param name="endDate">Date de fin de la période</param>
-    /// <returns>Résumé généré par l'IA en langage naturel</returns>
-    Task<string> GenerateFinancialSummaryAsync(DateTime startDate, DateTime endDate);
+    /// <param name="startDate">Date de dï¿½but de la pï¿½riode</param>
+    /// <param name="endDate">Date de fin de la pï¿½riode</param>
+    /// <returns>Rï¿½sumï¿½ gï¿½nï¿½rï¿½ par l'IA en langage naturel</returns>
+    Task<string> GenerateFinancialSummaryAsync(int userId, DateTime startDate, DateTime endDate);
 
     /// <summary>
-    /// Détecte les transactions inhabituelles (anomalies)
+    /// Chat conversationnel avec l'IA, contextualisï¿½ par les donnï¿½es de l'utilisateur
+    /// </summary>
+    /// <param name="userId">ID de l'utilisateur</param>
+    /// <param name="message">Message de l'utilisateur</param>
+    /// <param name="context">Contexte additionnel (page, stats, transactions)</param>
+    /// <returns>Rï¿½ponse gï¿½nï¿½rï¿½e par l'IA</returns>
+    Task<string> GetChatResponseAsync(int userId, string message, string? context);
+
+    /// <summary>
+    /// Dï¿½tecte les transactions inhabituelles (anomalies)
     /// </summary>
     /// <returns>Liste des transactions suspectes avec explication</returns>
-    Task<List<string>> DetectAnomaliesAsync();
+    Task<List<string>> DetectAnomaliesAsync(int userId);
 
     /// <summary>
-    /// Génère des prédictions budgétaires basées sur l'historique
+    /// Gï¿½nï¿½re des prï¿½dictions budgï¿½taires basï¿½es sur l'historique
     /// </summary>
-    /// <param name="monthsAhead">Nombre de mois à prédire</param>
-    /// <returns>Prédictions de revenus et dépenses</returns>
-    Task<string> PredictBudgetAsync(int monthsAhead);
+    /// <param name="monthsAhead">Nombre de mois ï¿½ prï¿½dire</param>
+    /// <returns>Prï¿½dictions de revenus et dï¿½penses</returns>
+    Task<string> PredictBudgetAsync(int userId, int monthsAhead);
 
     /// <summary>
-    /// Analyse le patrimoine global et génère des insights stratégiques via l'IA
+    /// Analyse le patrimoine global et gï¿½nï¿½re des insights stratï¿½giques via l'IA
     /// </summary>
-    /// <returns>Liste de 3 insights patrimoniaux personnalisés</returns>
+    /// <returns>Liste de 3 insights patrimoniaux personnalisï¿½s</returns>
     /// <remarks>
-    /// Cette méthode :
-    /// 1. Récupère tous les assets et transactions
-    /// 2. Calcule les métriques patrimoniales :
-    ///    - Valeur totale et répartition par type
-    ///    - Revenus/dépenses mensuels moyens
-    ///    - Ratios clés (revenus/patrimoine, assets productifs)
-    /// 3. Construit un prompt structuré pour Gemini
-    /// 4. Génère 3 insights stratégiques via l'IA
+    /// Cette mï¿½thode :
+    /// 1. Rï¿½cupï¿½re tous les assets et transactions
+    /// 2. Calcule les mï¿½triques patrimoniales :
+    ///    - Valeur totale et rï¿½partition par type
+    ///    - Revenus/dï¿½penses mensuels moyens
+    ///    - Ratios clï¿½s (revenus/patrimoine, assets productifs)
+    /// 3. Construit un prompt structurï¿½ pour Gemini
+    /// 4. Gï¿½nï¿½re 3 insights stratï¿½giques via l'IA
     /// 5. Retourne une liste de 3 phrases courtes (15-20 mots chacune)
     /// </remarks>
-    Task<List<string>> GetPortfolioInsightsAsync();
+    Task<List<string>> GetPortfolioInsightsAsync(int userId);
 }
+

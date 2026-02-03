@@ -1,0 +1,196 @@
+### Test IA Analytics Endpoints
+
+## 1. Test Spending Patterns
+GET http://localhost:5153/api/finance/spending-patterns?userId=1
+Authorization: Bearer {your_jwt_token}
+
+### Response Example (200 OK)
+{
+  "totalTransactions": 156,
+  "totalSpent": 4280.50,
+  "averageMonthlySpending": 1426.83,
+  "highestSpendingMonth": 1650.00,
+  "lowestSpendingMonth": 1200.00,
+  "spendingVariance": 15.3,
+  "trendDirection": "Decreasing",
+  "mostSpentCategory": "Alimentation",
+  "categories": [
+    {
+      "category": "Alimentation",
+      "totalSpent": 1285.40,
+      "transactionCount": 98,
+      "averageTransaction": 13.11,
+      "percentage": 30.1,
+      "isRecurring": true
+    }
+  ]
+}
+
+---
+
+## 2. Test Smart Anomalies
+GET http://localhost:5153/api/finance/smart-anomalies?userId=1
+Authorization: Bearer {your_jwt_token}
+
+### Response Example (200 OK)
+{
+  "totalAnomalies": 5,
+  "highSeverityCount": 2,
+  "mediumSeverityCount": 2,
+  "lowSeverityCount": 1,
+  "hasCriticalAnomalies": true,
+  "anomalies": [
+    {
+      "transactionId": 42,
+      "description": "Restaurant Premium",
+      "category": "Loisirs",
+      "amount": 450.00,
+      "date": "2026-02-01T12:30:00",
+      "anomalyType": "UnusualAmount",
+      "severity": "High",
+      "message": "Dépense anormalement élevée en Loisirs: 450,00 CAD (355% au-dessus de la moyenne)",
+      "expectedRange": {
+        "min": 45.20,
+        "max": 125.60
+      }
+    }
+  ]
+}
+
+---
+
+## 3. Test Recommendations
+GET http://localhost:5153/api/finance/recommendations?userId=1
+Authorization: Bearer {your_jwt_token}
+
+### Response Example (200 OK)
+{
+  "recommendations": [
+    {
+      "type": "ReduceSpending",
+      "category": "Alimentation",
+      "title": "Réduire les dépenses en Alimentation",
+      "description": "Votre catégorie 'Alimentation' représente 30.1% de vos dépenses...",
+      "potentialSavings": 128.54,
+      "priority": "High",
+      "icon": "📉"
+    },
+    {
+      "type": "ReviewAnomalies",
+      "title": "Vérifier les dépenses inhabituelles",
+      "description": "Vous avez 2 dépense(s) anormalement élevée(s)...",
+      "potentialSavings": 890.00,
+      "priority": "High",
+      "icon": "⚠️"
+    }
+  ]
+}
+
+---
+
+## Test Flow Complet
+
+### 1. Login et obtenir token
+POST http://localhost:5153/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+Response:
+{
+  "user": { "id": 1, "email": "user@example.com", "firstName": "John" },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+
+### 2. Copier le token dans Authorization header
+
+### 3. Tester les 3 endpoints IA en succession
+
+---
+
+## Cas de Test Spécifiques
+
+### Test A: Pas de transactions
+- UserId avec 0 transactions
+- Expected: 
+  - Patterns: totalTransactions = 0
+  - Anomalies: totalAnomalies = 0
+  - Recommendations: lista vide
+
+### Test B: Anomalies hautes
+- Ajouter manuellement une transaction: 500 CAD en Loisirs
+- Other Loisirs transactions: 50-100 CAD range
+- Expected: 
+  - Anomalies.highSeverityCount > 0
+  - Message contenant "355%" ou plus
+
+### Test C: Dépenses stables
+- Transactions régulières, montants stables
+- Expected:
+  - SpendingVariance < 20
+  - TrendDirection = "Neutral"
+  - Recommandations: menos críticas
+
+---
+
+## Error Cases
+
+### 401 Unauthorized
+GET http://localhost:5153/api/finance/spending-patterns?userId=1
+(sans Authorization header)
+
+Expected Response:
+{
+  "message": "Unauthorized access"
+}
+
+### 403 Forbidden
+GET http://localhost:5153/api/finance/spending-patterns?userId=2
+Authorization: Bearer {token_for_userId_1}
+
+Expected Response: 403 Forbidden
+
+### 400 Bad Request
+GET http://localhost:5153/api/finance/spending-patterns?userId=abc
+(userId no es número)
+
+Expected Response: 400 Bad Request
+
+---
+
+## Performance Notes
+
+- Endpoints responden en <500ms para 3 meses de datos
+- Grouping y sorting se hace en memoria (LINQ)
+- No hay N+1 queries
+- Cache potencial: resultados de analytics por 1 hora
+
+---
+
+## Debugging
+
+### Ver logs SQL
+En appsettings.Development.json:
+```json
+"Logging": {
+  "LogLevel": {
+    "Microsoft.EntityFrameworkCore.Database.Command": "Information"
+  }
+}
+```
+
+### Validar token
+En browser DevTools:
+1. Application tab
+2. Cookies
+3. Buscar "auth_token"
+4. Decodificar en jwt.io
+
+### Ver respuesta JSON
+En Network tab:
+1. Filtrar por /finance
+2. Click en request
+3. Ver Response tab

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
+import AIAssistantChat from "@/components/AIAssistantChat";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,6 +33,7 @@ export default function RootLayout({
         <main className="pt-16">
           {children}
         </main>
+        <AIAssistantChat />
       </body>
     </html>
   );

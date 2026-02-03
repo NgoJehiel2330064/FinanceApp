@@ -21,6 +21,16 @@ public class Asset
     public int Id { get; set; }
 
     /// <summary>
+    /// Identifiant de l'utilisateur propriétaire de cet actif
+    /// </summary>
+    /// <remarks>
+    /// Clé étrangère vers la table Users
+    /// Permet d'isoler les données par utilisateur
+    /// </remarks>
+    [Required]
+    public int UserId { get; set; }
+
+    /// <summary>
     /// Nom de l'actif (ex: "Compte Courant BNP", "Appartement Paris", "Portefeuille Crypto")
     /// </summary>
     [Required]
@@ -43,6 +53,9 @@ public class Asset
     /// <remarks>
     /// decimal(18,2) : Pr�cision suffisante pour des gros montants
     /// Ex: maison � 500,000.00�, compte � 15,432.50�
+    /// 
+    /// Pour les comptes bancaires (BankAccount), cette valeur représente
+    /// le solde actuel qui est automatiquement synchronisé avec les transactions.
     /// </remarks>
     [Required]
     [Column(TypeName = "decimal(18,2)")]
@@ -149,4 +162,21 @@ public enum AssetType
     /// Autres actifs (objets d'art, bijoux, collections)
     /// </summary>
     Other = 5
+}
+
+/// <summary>
+/// Résumé du patrimoine net avec détails
+/// </summary>
+public class NetWorthSummary
+{
+    public int UserId { get; set; }
+    public decimal TotalAssets { get; set; }
+    public decimal TotalLiabilities { get; set; }
+    public decimal NetWorth { get; set; }
+    public decimal LiquidAssets { get; set; }
+    public decimal TransactionBalance { get; set; }  // Solde net des transactions (revenus - dépenses)
+    public double CreditUtilization { get; set; }
+    public Dictionary<string, decimal> AssetBreakdown { get; set; } = new();
+    public Dictionary<string, decimal> LiabilityBreakdown { get; set; } = new();
+    public DateTime LastUpdated { get; set; }
 }

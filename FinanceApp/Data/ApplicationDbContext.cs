@@ -50,6 +50,15 @@ public class ApplicationDbContext : DbContext
     /// M�me principe que Transactions mais pour les actifs du patrimoine
     /// </remarks>
     public DbSet<Asset> Assets { get; set; }
+
+    /// <summary>
+    /// DbSet représentant la table "Liabilities" dans PostgreSQL
+    /// </summary>
+    /// <remarks>
+    /// Gère les passifs/dettes (cartes de crédit, prêts, etc.)
+    /// </remarks>
+    public DbSet<Liability> Liabilities { get; set; }
+
     /// <summary>
     /// DbSet représentant la table "Users" dans PostgreSQL
     /// </summary>
@@ -149,5 +158,53 @@ public class ApplicationDbContext : DbContext
             // Configuration du hash de mot de passe
             entity.Property(u => u.PasswordHash)
                   .IsRequired();
-        });    }
+        });
+
+        // Configuration de l'entité Liability
+        modelBuilder.Entity<Liability>(entity =>
+        {
+            // Index sur le type de passif
+            entity.HasIndex(l => l.Type)
+                  .HasDatabaseName("IX_Liabilities_Type");
+
+            // Index sur l'utilisateur pour filtrage rapide
+            entity.HasIndex(l => l.UserId)
+                  .HasDatabaseName("IX_Liabilities_UserId");
+
+            // Configuration de la précision pour CurrentBalance
+            entity.Property(l => l.CurrentBalance)
+                  .HasPrecision(18, 2);
+
+            // Configuration de la précision pour CreditLimit (nullable)
+            entity.Property(l => l.CreditLimit)
+                  .HasPrecision(18, 2)
+                  .IsRequired(false);
+
+            // Configuration de la précision pour InterestRate (nullable)
+            entity.Property(l => l.InterestRate)
+                  .HasPrecision(5, 2)
+                  .IsRequired(false);
+
+            // Configuration de la précision pour MonthlyPayment (nullable)
+            entity.Property(l => l.MonthlyPayment)
+                  .HasPrecision(18, 2)
+                  .IsRequired(false);
+        });
+
+        // Configuration des relations Transaction -> Asset/Liability
+        modelBuilder.Entity<Transaction>(entity =>
+        {
+            // Index sur SourceAssetId pour jointures rapides
+            entity.HasIndex(t => t.SourceAssetId)
+                  .HasDatabaseName("IX_Transactions_SourceAssetId");
+
+            // Index sur SourceLiabilityId pour jointures rapides
+            entity.HasIndex(t => t.SourceLiabilityId)
+                  .HasDatabaseName("IX_Transactions_SourceLiabilityId");
+
+            // Index sur PaymentMethod pour analyses
+            entity.HasIndex(t => t.PaymentMethod)
+                  .HasDatabaseName("IX_Transactions_PaymentMethod");
+        });
+    }
 }

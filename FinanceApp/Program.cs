@@ -1,29 +1,33 @@
 using FinanceApp.Data;
 using FinanceApp.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+// Activer le comportement legacy des timestamps pour Npgsql (accepter DateTime sans Kind)
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 // ============================================================================
-// CRÉATION DU BUILDER
+// CRï¿½ATION DU BUILDER
 // ============================================================================
 // WebApplication.CreateBuilder() :
 // - Initialise la configuration (appsettings.json, variables d'environnement)
-// - Configure le système de logging
-// - Prépare le conteneur d'injection de dépendances (DI Container)
+// - Configure le systï¿½me de logging
+// - Prï¿½pare le conteneur d'injection de dï¿½pendances (DI Container)
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================================================================
 // CONFIGURATION DES SERVICES (Dependency Injection Container)
 // ============================================================================
-// Tous les services enregistrés ici seront disponibles pour l'injection
+// Tous les services enregistrï¿½s ici seront disponibles pour l'injection
 // dans les controllers, autres services, middleware, etc.
 
 // ----------------------------------------------------------------------------
 // CONTROLLERS
 // ----------------------------------------------------------------------------
-// AddControllers() : Enregistre les services nécessaires pour les API Controllers
+// AddControllers() : Enregistre les services nï¿½cessaires pour les API Controllers
 // - Routing (gestion des routes /api/...)
 // - Model binding (conversion JSON ? objets C#)
-// - Validation des données
+// - Validation des donnï¿½es
 // - Formatters JSON
 builder.Services.AddControllers();
 
@@ -31,13 +35,13 @@ builder.Services.AddControllers();
 // ENTITY FRAMEWORK CORE + POSTGRESQL
 // ----------------------------------------------------------------------------
 // AddDbContext<T>() : Enregistre le DbContext dans le conteneur DI
-// Scope : SCOPED (une instance par requête HTTP)
+// Scope : SCOPED (une instance par requï¿½te HTTP)
 // 
 // POURQUOI SCOPED ?
-// - Chaque requête HTTP a son propre DbContext
-// - Évite les conflits entre requêtes simultanées
-// - Le DbContext suit les changements (Change Tracking) pendant la requête
-// - Automatiquement disposé (fermé) à la fin de la requête
+// - Chaque requï¿½te HTTP a son propre DbContext
+// - ï¿½vite les conflits entre requï¿½tes simultanï¿½es
+// - Le DbContext suit les changements (Change Tracking) pendant la requï¿½te
+// - Automatiquement disposï¿½ (fermï¿½) ï¿½ la fin de la requï¿½te
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     // GetConnectionString() : Lit "ConnectionStrings:DefaultConnection" depuis appsettings.json
@@ -45,26 +49,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
     // UseNpgsql() : Configure EF Core pour utiliser PostgreSQL
+    options.UseNpgsql(connectionString);
     // 
     // COMMUNICATION AVEC DOCKER :
     // 1. Votre app ASP.NET Core tourne sur Windows (localhost)
     // 2. PostgreSQL tourne dans un conteneur Docker
     // 3. Docker expose le port 5432 du conteneur vers votre Windows (localhost:5432)
-    // 4. Npgsql utilise le protocole TCP/IP pour se connecter à localhost:5432
+    // 4. Npgsql utilise le protocole TCP/IP pour se connecter ï¿½ localhost:5432
     // 5. Docker redirige la connexion vers le conteneur PostgreSQL
     // 
-    // FLUX DE DONNÉES :
+    // FLUX DE DONNï¿½ES :
     // Program.cs ? DbContext ? Npgsql ? TCP/IP ? Docker (port 5432) ? PostgreSQL Container
     options.UseNpgsql(connectionString);
 
-    // OPTIONS DE DÉVELOPPEMENT (à commenter en production) :
-    // EnableSensitiveDataLogging() : Affiche les valeurs des paramètres dans les logs SQL
+    // OPTIONS DE Dï¿½VELOPPEMENT (ï¿½ commenter en production) :
+    // EnableSensitiveDataLogging() : Affiche les valeurs des paramï¿½tres dans les logs SQL
     // Exemple : au lieu de "WHERE Id = @p0", affiche "WHERE Id = 5"
-    // ?? DANGER en production : peut exposer des données sensibles dans les logs
+    // ?? DANGER en production : peut exposer des donnï¿½es sensibles dans les logs
     // options.EnableSensitiveDataLogging();
 
-    // EnableDetailedErrors() : Messages d'erreur plus détaillés
-    // Utile pour debugger les problèmes de mapping entre C# et SQL
+    // EnableDetailedErrors() : Messages d'erreur plus dï¿½taillï¿½s
+    // Utile pour debugger les problï¿½mes de mapping entre C# et SQL
     // options.EnableDetailedErrors();
 });
 
@@ -75,65 +80,91 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 
 // POURQUOI HTTPCLIENTFACTORY ?
 // 1. GESTION DU POOL DE CONNEXIONS :
-//    - Réutilise les connexions TCP existantes
-//    - Évite de créer/détruire des sockets à chaque requête
-//    - Améliore les performances (moins d'overhead réseau)
+//    - Rï¿½utilise les connexions TCP existantes
+//    - ï¿½vite de crï¿½er/dï¿½truire des sockets ï¿½ chaque requï¿½te
+//    - Amï¿½liore les performances (moins d'overhead rï¿½seau)
 // 
-// 2. ÉVITE L'ÉPUISEMENT DES PORTS (Socket Exhaustion) :
-//    - Si vous créez des HttpClient avec "new HttpClient()", vous risquez :
-//      * D'épuiser les sockets disponibles (limite système)
+// 2. ï¿½VITE L'ï¿½PUISEMENT DES PORTS (Socket Exhaustion) :
+//    - Si vous crï¿½ez des HttpClient avec "new HttpClient()", vous risquez :
+//      * D'ï¿½puiser les sockets disponibles (limite systï¿½me)
 //      * Des TIME_WAIT sockets qui restent ouverts
-//    - HttpClientFactory gère automatiquement le cycle de vie
+//    - HttpClientFactory gï¿½re automatiquement le cycle de vie
 // 
 // 3. GESTION AUTOMATIQUE DU DNS :
-//    - Rafraîchit automatiquement les résolutions DNS
+//    - Rafraï¿½chit automatiquement les rï¿½solutions DNS
 //    - Important si l'IP du serveur change (load balancers, etc.)
 // 
-// 4. CONFIGURATION CENTRALISÉE :
-//    - Timeout, headers par défaut, retry policies, etc.
-//    - Peut être configuré une fois pour toute l'application
+// 4. CONFIGURATION CENTRALISï¿½E :
+//    - Timeout, headers par dï¿½faut, retry policies, etc.
+//    - Peut ï¿½tre configurï¿½ une fois pour toute l'application
 builder.Services.AddHttpClient();
 
 // ----------------------------------------------------------------------------
-// SERVICES MÉTIER (Business Services)
+// SERVICES Mï¿½TIER (Business Services)
 // ----------------------------------------------------------------------------
 // AddScoped<Interface, Implementation>() : Enregistre un service avec scope SCOPED
 // 
 // SCOPED signifie :
-// - Une nouvelle instance est créée pour chaque requête HTTP
-// - La même instance est réutilisée dans toute la requête
-// - Parfait pour les services qui gardent un état pendant la requête
+// - Une nouvelle instance est crï¿½ï¿½e pour chaque requï¿½te HTTP
+// - La mï¿½me instance est rï¿½utilisï¿½e dans toute la requï¿½te
+// - Parfait pour les services qui gardent un ï¿½tat pendant la requï¿½te
 // 
-// EXEMPLE DE VIE D'UNE REQUÊTE :
-// 1. Requête HTTP arrive : POST /api/transactions
-// 2. ASP.NET Core crée : ApplicationDbContext + GeminiService + TransactionsController
+// EXEMPLE DE VIE D'UNE REQUï¿½TE :
+// 1. Requï¿½te HTTP arrive : POST /api/transactions
+// 2. ASP.NET Core crï¿½e : ApplicationDbContext + GeminiService + TransactionsController
 // 3. Le controller utilise ces instances pendant le traitement
-// 4. À la fin de la requête, tout est automatiquement "disposed" (libéré)
-// 5. Prochaine requête : nouvelles instances fraîches
-builder.Services.AddScoped<IGeminiService, GeminiService>();
+// 4. ï¿½ la fin de la requï¿½te, tout est automatiquement "disposed" (libï¿½rï¿½)
+// 5. Prochaine requï¿½te : nouvelles instances fraï¿½ches
+builder.Services.AddScoped<IGeminiService, GroqAIService>();
+builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
+builder.Services.AddScoped<INetWorthService, NetWorthService>();
+
+// ----------------------------------------------------------------------------
+// AUTHENTIFICATION JWT
+// ----------------------------------------------------------------------------
+// Configure l'authentification JWT Bearer
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? string.Empty)
+            ),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // ALTERNATIVE : AddSingleton vs AddScoped vs AddTransient
 // 
 // SINGLETON (AddSingleton) :
 // - Une seule instance pour toute l'application
-// - Créée au démarrage, réutilisée pour toutes les requêtes
-// - ?? Doit être thread-safe (sans état ou avec locks)
-// - Exemple : Configuration, Cache, Services sans état
+// - Crï¿½ï¿½e au dï¿½marrage, rï¿½utilisï¿½e pour toutes les requï¿½tes
+// - ?? Doit ï¿½tre thread-safe (sans ï¿½tat ou avec locks)
+// - Exemple : Configuration, Cache, Services sans ï¿½tat
 // 
 // SCOPED (AddScoped) :
-// - Une instance par requête HTTP
-// - Idéal pour DbContext et services qui gardent un état temporaire
-// - Exemple : DbContext, UnitOfWork, Services métier
+// - Une instance par requï¿½te HTTP
+// - Idï¿½al pour DbContext et services qui gardent un ï¿½tat temporaire
+// - Exemple : DbContext, UnitOfWork, Services mï¿½tier
 // 
 // TRANSIENT (AddTransient) :
-// - Une nouvelle instance à chaque injection
-// - Même dans la même requête, plusieurs instances différentes
-// - Exemple : Services légers sans état, Factories
+// - Une nouvelle instance ï¿½ chaque injection
+// - Mï¿½me dans la mï¿½me requï¿½te, plusieurs instances diffï¿½rentes
+// - Exemple : Services lï¿½gers sans ï¿½tat, Factories
 
 // ----------------------------------------------------------------------------
 // SWAGGER / OpenAPI
 // ----------------------------------------------------------------------------
-// Swagger : Génère automatiquement une documentation interactive de votre API
+// Swagger : Gï¿½nï¿½re automatiquement une documentation interactive de votre API
 // Interface web : http://localhost:5000/swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -141,43 +172,48 @@ builder.Services.AddSwaggerGen();
 // ----------------------------------------------------------------------------
 // CORS (Cross-Origin Resource Sharing)
 // ----------------------------------------------------------------------------
-// CORS : Permet à un frontend sur un domaine différent d'appeler votre API
+// CORS : Permet ï¿½ un frontend sur un domaine diffï¿½rent d'appeler votre API
 // 
 // POURQUOI CORS ?
-// Par défaut, les navigateurs bloquent les requêtes entre domaines différents :
+// Par dï¿½faut, les navigateurs bloquent les requï¿½tes entre domaines diffï¿½rents :
 // - Frontend : http://localhost:3000 (React/Vue/Angular)
 // - Backend : http://localhost:5000 (API .NET)
 // - Sans CORS, le navigateur refuse les appels API
 // 
-// POLITIQUE DE SÉCURITÉ :
-// Le navigateur envoie d'abord une requête OPTIONS (preflight)
-// pour vérifier si le serveur autorise le domaine d'origine
+// POLITIQUE DE Sï¿½CURITï¿½ :
+// Le navigateur envoie d'abord une requï¿½te OPTIONS (preflight)
+// pour vï¿½rifier si le serveur autorise le domaine d'origine
 builder.Services.AddCors(options =>
 {
-    // AddPolicy() : Définit une politique CORS nommée
+    // AddPolicy() : Dï¿½finit une politique CORS nommï¿½e
     options.AddPolicy("AllowFrontend", policy =>
     {
-        // WithOrigins() : Liste des domaines autorisés
-        // Support pour plusieurs frameworks frontend sur différents ports
-        policy.WithOrigins(
-                  "http://localhost:3000",     // Next.js, React (Create React App)
-                  "http://localhost:3001",     // Next.js alternatif
-                  "http://localhost:4200",     // Angular
-                  "http://localhost:5173",     // Vite (React, Vue)
-                  "http://localhost:8080"      // Vue CLI
-              )
+        // Rï¿½cupï¿½ration des origines autorisï¿½es depuis la configuration
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+            ?? new[] 
+            {
+                "http://localhost:3000",     // Next.js, React (Create React App)
+                "http://localhost:3001",     // Next.js alternatif
+                "http://localhost:4200",     // Angular
+                "http://localhost:5173",     // Vite (React, Vue)
+                "http://localhost:8080"      // Vue CLI
+            };
+
+        // WithOrigins() : Liste des domaines autorisï¿½s
+        // Support pour plusieurs frameworks frontend et production (Vercel)
+        policy.WithOrigins(allowedOrigins)
               // AllowAnyMethod() : Autorise GET, POST, PUT, DELETE, PATCH, etc.
               .AllowAnyMethod()
-              // AllowAnyHeader() : Autorise tous les en-têtes (Content-Type, Authorization, etc.)
+              // AllowAnyHeader() : Autorise tous les en-tï¿½tes (Content-Type, Authorization, etc.)
               .AllowAnyHeader()
               // AllowCredentials() : Autorise l'envoi de cookies et credentials
-              // Nécessaire si vous utilisez l'authentification basée sur cookies
+              // Nï¿½cessaire si vous utilisez l'authentification basï¿½e sur cookies
               .AllowCredentials();
     });
 
-    // POLITIQUE DE DÉVELOPPEMENT : Autoriser tous les domaines (UNIQUEMENT EN DÉVELOPPEMENT)
-    // ?? DANGER en production : expose votre API à tous les sites web
-    // Utilisez cette politique pendant le développement si vous avez des problèmes CORS
+    // POLITIQUE DE Dï¿½VELOPPEMENT : Autoriser tous les domaines (UNIQUEMENT EN Dï¿½VELOPPEMENT)
+    // ?? DANGER en production : expose votre API ï¿½ tous les sites web
+    // Utilisez cette politique pendant le dï¿½veloppement si vous avez des problï¿½mes CORS
     options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
@@ -189,32 +225,32 @@ builder.Services.AddCors(options =>
 // ============================================================================
 // BUILD DE L'APPLICATION
 // ============================================================================
-// Build() : Construit l'application web avec tous les services configurés
-// À partir d'ici, on ne peut plus ajouter de services
+// Build() : Construit l'application web avec tous les services configurï¿½s
+// ï¿½ partir d'ici, on ne peut plus ajouter de services
 var app = builder.Build();
 
 // ============================================================================
 // CONFIGURATION DU PIPELINE HTTP (Middleware)
 // ============================================================================
-// Le pipeline traite chaque requête HTTP dans l'ordre défini ici
+// Le pipeline traite chaque requï¿½te HTTP dans l'ordre dï¿½fini ici
 // Chaque middleware peut :
-// 1. Traiter la requête avant de passer au suivant
+// 1. Traiter la requï¿½te avant de passer au suivant
 // 2. Passer au middleware suivant
-// 3. Traiter la réponse en remontant
+// 3. Traiter la rï¿½ponse en remontant
 // 
-// ORDRE D'EXÉCUTION (IMPORTANT !) :
-// Requête  ? Middleware 1 ? Middleware 2 ? Middleware 3 ? Controller
-// Réponse ? Middleware 1 ? Middleware 2 ? Middleware 3 ? Controller
+// ORDRE D'EXï¿½CUTION (IMPORTANT !) :
+// Requï¿½te  ? Middleware 1 ? Middleware 2 ? Middleware 3 ? Controller
+// Rï¿½ponse ? Middleware 1 ? Middleware 2 ? Middleware 3 ? Controller
 
 // ----------------------------------------------------------------------------
-// SWAGGER (uniquement en développement)
+// SWAGGER (uniquement en dï¿½veloppement)
 // ----------------------------------------------------------------------------
-// app.Environment : Détecte l'environnement (Development, Staging, Production)
-// Défini par la variable d'environnement ASPNETCORE_ENVIRONMENT
+// app.Environment : Dï¿½tecte l'environnement (Development, Staging, Production)
+// Dï¿½fini par la variable d'environnement ASPNETCORE_ENVIRONMENT
 if (app.Environment.IsDevelopment())
 {
     // UseSwagger() : Active l'endpoint /swagger/v1/swagger.json
-    // Génère le fichier JSON décrivant votre API (OpenAPI spec)
+    // Gï¿½nï¿½re le fichier JSON dï¿½crivant votre API (OpenAPI spec)
     app.UseSwagger();
 
     // UseSwaggerUI() : Active l'interface web interactive /swagger
@@ -227,23 +263,28 @@ if (app.Environment.IsDevelopment())
 // ----------------------------------------------------------------------------
 // UseHttpsRedirection() : Redirige automatiquement HTTP ? HTTPS
 // Exemple : http://localhost:5000 ? https://localhost:5001
-// Important pour la sécurité en production
+// Important pour la sï¿½curitï¿½ en production
 app.UseHttpsRedirection();
 
 // ----------------------------------------------------------------------------
 // CORS
 // ----------------------------------------------------------------------------
-// UseCors() : Active la politique CORS définie plus haut
-// DOIT être avant UseAuthorization() et MapControllers()
-// Traite les requêtes preflight (OPTIONS) automatiquement
+// UseCors() : Active la politique CORS dï¿½finie plus haut
+// DOIT ï¿½tre avant UseAuthorization() et MapControllers()
+// Traite les requï¿½tes preflight (OPTIONS) automatiquement
 app.UseCors("AllowFrontend");
+
+// ----------------------------------------------------------------------------
+// AUTHENTIFICATION
+// ----------------------------------------------------------------------------
+app.UseAuthentication();
 
 // ----------------------------------------------------------------------------
 // AUTHORIZATION
 // ----------------------------------------------------------------------------
 // UseAuthorization() : Active le middleware d'autorisation
-// Vérifie les attributs [Authorize] sur les controllers/actions
-// Pour l'instant, pas d'authentification configurée, mais on prépare le terrain
+// Vï¿½rifie les attributs [Authorize] sur les controllers/actions
+// Pour l'instant, pas d'authentification configurï¿½e, mais on prï¿½pare le terrain
 app.UseAuthorization();
 
 // ----------------------------------------------------------------------------
@@ -251,35 +292,35 @@ app.UseAuthorization();
 // ----------------------------------------------------------------------------
 // MapControllers() : Scanne tous les controllers et mappe leurs routes
 // Exemple : TransactionsController avec [Route("api/[controller]")]
-// ? Routes créées : GET/POST/PUT/DELETE /api/transactions
+// ? Routes crï¿½ï¿½es : GET/POST/PUT/DELETE /api/transactions
 // 
-// COMMENT ÇA FONCTIONNE ?
-// 1. Requête HTTP arrive : GET /api/transactions/5
+// COMMENT ï¿½A FONCTIONNE ?
+// 1. Requï¿½te HTTP arrive : GET /api/transactions/5
 // 2. Le router analyse la route
 // 3. Trouve TransactionsController.GetTransaction(id: 5)
-// 4. Le conteneur DI instancie le controller avec ses dépendances
-// 5. Appelle la méthode GetTransaction(5)
-// 6. La réponse remonte le pipeline
-// 7. ASP.NET Core sérialise le résultat en JSON
-// 8. Retourne la réponse HTTP 200 avec le JSON
+// 4. Le conteneur DI instancie le controller avec ses dï¿½pendances
+// 5. Appelle la mï¿½thode GetTransaction(5)
+// 6. La rï¿½ponse remonte le pipeline
+// 7. ASP.NET Core sï¿½rialise le rï¿½sultat en JSON
+// 8. Retourne la rï¿½ponse HTTP 200 avec le JSON
 app.MapControllers();
 
 // ============================================================================
-// DÉMARRAGE DE L'APPLICATION
+// Dï¿½MARRAGE DE L'APPLICATION
 // ============================================================================
-// Run() : Démarre le serveur web Kestrel
-// Écoute sur les ports configurés (généralement 5000 HTTP, 5001 HTTPS)
-// Bloque le thread principal jusqu'à l'arrêt de l'application (Ctrl+C)
+// Run() : Dï¿½marre le serveur web Kestrel
+// ï¿½coute sur les ports configurï¿½s (gï¿½nï¿½ralement 5000 HTTP, 5001 HTTPS)
+// Bloque le thread principal jusqu'ï¿½ l'arrï¿½t de l'application (Ctrl+C)
 // 
-// FLUX COMPLET D'UNE REQUÊTE :
+// FLUX COMPLET D'UNE REQUï¿½TE :
 // 1. Client (Postman/Frontend) ? HTTP Request
-// 2. Kestrel (serveur web) reçoit la requête
-// 3. Pipeline HTTP (middleware) traite la requête
+// 2. Kestrel (serveur web) reï¿½oit la requï¿½te
+// 3. Pipeline HTTP (middleware) traite la requï¿½te
 // 4. Router trouve le controller correspondant
-// 5. DI Container instancie le controller + dépendances
-// 6. Action method s'exécute
+// 5. DI Container instancie le controller + dï¿½pendances
+// 6. Action method s'exï¿½cute
 // 7. DbContext ? Npgsql ? TCP/IP ? Docker ? PostgreSQL
-// 8. PostgreSQL traite la requête SQL et retourne les données
+// 8. PostgreSQL traite la requï¿½te SQL et retourne les donnï¿½es
 // 9. Docker ? TCP/IP ? Npgsql ? EF Core ? Controller
 // 10. Controller retourne ActionResult
 // 11. Pipeline remonte, serialise en JSON
