@@ -292,3 +292,10 @@ git push
 ---
 
 **Félicitations ! Votre application est maintenant accessible partout dans le monde.**
+
+---
+
+## Alternative : Déploiement sur Azure (App Service)
+
+Si tu déploies sur Azure au lieu de Railway/Vercel, suis :
+- `AZURE-DEPLOYMENT.md`
